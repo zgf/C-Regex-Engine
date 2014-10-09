@@ -1,0 +1,21 @@
+﻿生成启动时间为 2014/10/7 12:19:55。
+     1>项目“C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”在节点 2 上(Build 个目标)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt main.cpp
+         main.cpp
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(23): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(125): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(129): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(163): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(177): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_parser.h(58): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+       Link:
+         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.lib" /MACHINE:X64 x64\Release\main.obj
+         Generating code
+         Finished generating code
+         C++ Regex Engine.vcxproj -> C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.exe
+     1>已完成生成项目“C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”(Build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:07.75
