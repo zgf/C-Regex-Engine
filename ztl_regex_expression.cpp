@@ -512,7 +512,7 @@ namespace ztl
 			this->Invoke(expression->expression, this->argument);
 		}
 	};
-	class BuildEpsilonNFAAlgorithm : public RegexAlogrithm < pair<State*,State*>, AutoMachine* >
+	class BuildEpsilonNFAAlgorithm : public RegexAlogrithm <AutoMachine::StatesType, AutoMachine* >
 	{
 	public:
 		pair<State*,State*> Apply(Ptr<CharSetExpression>& expression)
@@ -565,30 +565,35 @@ namespace ztl
 		pair<State*,State*> Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			this->argument->NewLookAroundStates(substates,Edge::EdgeType::NegativeLookbehind);
+			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookbehind);
 		}
 		pair<State*,State*> Apply(Ptr<PositiveLookbehindExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositiveLookbehind);
+			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositiveLookbehind);
 
 		}
 		pair<State*,State*> Apply(Ptr<NegativeLookaheadExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookahead);
-
+			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookahead);
+			
 		}
 		pair<State*,State*> Apply(Ptr<PositivetiveLookaheadExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositivetiveLookahead);
+			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositivetiveLookahead);
 		}
 	};
 	void Expression::BuildOrthogonal(Ptr<vector<int>>&target)
 	{
 		assert(target->size() == 0);
 		return BuildOrthogonalAlgorithm().Invoke(shared_from_this(), target);
+	}
+	AutoMachine::StatesType Expression::BuildEpsilonNFA(AutoMachine* target)
+	{
+		return BuildEpsilonNFAAlgorithm().Invoke(shared_from_this(), target);
+
 	}
 	bool Expression::IsEqual(Ptr<Expression>& target)
 	{

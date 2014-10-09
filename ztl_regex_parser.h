@@ -37,14 +37,14 @@ namespace ztl
 		Ptr<Expression>			expression;
 		unordered_map<TokenType, function<Ptr<Expression>(  int& index)>> actions;
 		unordered_map<TokenType, function<Ptr<Expression>( Ptr<Expression>& express, int& index)>> loop_actions;
-
+		Ptr<vector<CharRange>> table;//×ÖÄ¸±í
 		unordered_map<TokenType, Ptr<unordered_set<TokenType>>>first_map;
 		int capture_count = 0;
 		wstring pattern;
 	public:
 		RegexParser() = delete;
 		RegexParser(const wstring& input_string, const Ptr<vector<RegexToken>>& token_list)
-			:tokens(token_list), pattern(input_string), expression(nullptr)
+			:tokens(token_list), pattern(input_string), expression(nullptr), table(nullptr)
 		{
 			InitFirstMap();
 			InitActionMap();
@@ -55,12 +55,17 @@ namespace ztl
 		{
 			int index = 0;
 			expression = Alter(index, tokens->size());
+			this->table = expression->GetCharSetTable();
+			expression->SetTreeCharSetOrthogonal(table);
 		}
-		Ptr<Expression> GetExpressTree()
+		Ptr<Expression> GetExpressTree()const
 		{
 			return expression;
 		}
-
+		Ptr<vector<CharRange>> GetCharTable()const
+		{
+			return table;
+		}
 	private:
 		int WstringToNumber(const wstring& str)
 		{

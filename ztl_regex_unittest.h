@@ -152,8 +152,8 @@ namespace ztl
 			ztl::RegexParser parser(input, lexer.GetTokens());
 			parser.RegexParsing();
 			auto&& expression = parser.GetExpressTree();
-			auto&& table = expression->GetCharSetTable();
-			expression->SetTreeCharSetOrthogonal(table);
+			AutoMachine* machine = new AutoMachine(parser.GetCharTable());
+			expression->BuildEpsilonNFA(machine);
 			auto result = expression->IsEqual(expect.expression);
 			return result;
 		};

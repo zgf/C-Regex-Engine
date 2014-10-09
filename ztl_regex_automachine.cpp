@@ -4,7 +4,7 @@ namespace ztl
 {
 	int AutoMachine::GetTableIndex(const CharRange& target)const
 	{
-		return distance(table.begin(), find(table.begin(), table.end(), target));
+		return distance(table->begin(), find(table->begin(), table->end(), target));
 	}
 	void AutoMachine::ConnetWith(State*& start, State*& end, const Edge::EdgeType& type)
 	{
@@ -73,7 +73,7 @@ namespace ztl
 		}
 		if(reverse == true)
 		{
-			vector<int> sum(table.size());
+			vector<int> sum(table->size());
 			std::iota(sum.begin(), sum.end(), 0);
 			sort(result.begin(), result.end());
 			set_difference(sum.begin(), sum.end(), result.begin(), result.end(), inserter(final, final.begin()));

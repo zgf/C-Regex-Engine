@@ -1,12 +1,13 @@
 #pragma once
 #include "ztl_regex_data.h"
+#include "ztl_regex_automachine.h"
 namespace ztl
 {
 	//////////////////////////////////////////////////////////////////////////
 	// 前置声明
 	//////////////////////////////////////////////////////////////////////////
 	class IRegexAlogrithm;
-
+	class AutoMachine;
 	//////////////////////////////////////////////////////////////////////////
 	//		表达式声明
 	//////////////////////////////////////////////////////////////////////////
@@ -25,6 +26,7 @@ namespace ztl
 		bool IsEqual(Ptr<Expression>& target);
 		Ptr<vector<CharRange>> GetCharSetTable();
 		void SetTreeCharSetOrthogonal(Ptr<vector<CharRange>>& table);
+		AutoMachine::StatesType BuildEpsilonNFA(AutoMachine* target);
 	private:
 		void BuildOrthogonal(Ptr<vector<int>>&target);
 	};

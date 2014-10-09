@@ -79,13 +79,18 @@ namespace ztl
 	{
 	public:
 		using StatesType = pair < State*, State* > ;
-		vector<CharRange> table;
-		State* start;
-		State* end;
 		unordered_map<wstring, StatesType> captures;
 		vector<StatesType>				 subexpression;//用在几个lookaround上
+		Ptr<vector<CharRange>> table;
 		Ptr<vector<Ptr<State>>> states;
 		Ptr<vector<Ptr<Edge>>> edges;
+	public:
+		AutoMachine() = delete;
+		AutoMachine(const Ptr<vector<CharRange>>& _table) 
+			:table(_table),states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>())
+		{
+
+		}
 	public:
 
 
