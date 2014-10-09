@@ -35,7 +35,6 @@ namespace ztl
 	private:
 		Ptr<vector<RegexToken>> tokens;
 		Ptr<Expression>			expression;
-		Ptr<unordered_map<wstring, Ptr<Expression>>> capture_map;
 		unordered_map<TokenType, function<Ptr<Expression>(  int& index)>> actions;
 		unordered_map<TokenType, function<Ptr<Expression>( Ptr<Expression>& express, int& index)>> loop_actions;
 
@@ -45,7 +44,7 @@ namespace ztl
 	public:
 		RegexParser() = delete;
 		RegexParser(const wstring& input_string, const Ptr<vector<RegexToken>>& token_list)
-			:tokens(token_list), pattern(input_string), expression(nullptr), capture_map(make_shared<unordered_map<wstring, Ptr<Expression>>>())
+			:tokens(token_list), pattern(input_string), expression(nullptr)
 		{
 			InitFirstMap();
 			InitActionMap();
@@ -56,10 +55,6 @@ namespace ztl
 		{
 			int index = 0;
 			expression = Alter(index, tokens->size());
-		}
-		Ptr<unordered_map<wstring, Ptr<Expression>>> GetCaptureMap()
-		{
-			return capture_map;
 		}
 		Ptr<Expression> GetExpressTree()
 		{
@@ -112,16 +107,9 @@ namespace ztl
 		{
 			index += 1;
 			auto&& name = this->Named(index);
-			auto&& find_result = this->capture_map->find(name);
-			if(find_result == this->capture_map->end())
-			{
-				throw exception("can't capture this name");
-			}
-			else
-			{
-				index += 1;
-				return make_shared<BackReferenceExpression>(name, find_result->second);
-			}
+			index += 1;
+			return make_shared<BackReferenceExpression>(name);
+		
 		}
 		Ptr<Expression> CaptureBegin(int& index)
 		{
@@ -482,14 +470,7 @@ namespace ztl
 			{
 				auto&& alter = Alter(index, end_index);
 				auto&& result = make_shared<CaptureExpression>(name, alter);
-				if(result->name.empty())
-				{
-					this->capture_map->insert({ to_wstring(capture_count), result });
-				}
-				else
-				{
-					this->capture_map->insert({ result->name, result });
-				}
+				
 				return move(result);
 			}
 			else

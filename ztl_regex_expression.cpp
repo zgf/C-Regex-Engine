@@ -1,5 +1,5 @@
 #include "forward.h"
-
+#include "ztl_regex_automachine.h"
 namespace ztl
 {
 	class IRegexAlogrithm
@@ -314,7 +314,7 @@ namespace ztl
 			auto expect = dynamic_pointer_cast<BackReferenceExpression>(argument);
 			if(expect != nullptr)
 			{
-				if(expect->name == expression->name && Invoke(expect->expression, expression->expression))
+				if(expect->name == expression->name)
 				{
 					return true;
 				}
@@ -415,7 +415,6 @@ namespace ztl
 		}
 		void Apply(Ptr<BackReferenceExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
 		}
 		void Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
@@ -492,7 +491,6 @@ namespace ztl
 		}
 		void Apply(Ptr<BackReferenceExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
 		}
 		void Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
@@ -514,7 +512,97 @@ namespace ztl
 			this->Invoke(expression->expression, this->argument);
 		}
 	};
+	class BuildEpsilonNFAAlgorithm : public RegexAlogrithm < pair<State*,State*>, AutoMachine* >
+	{
+	public:
+		pair<State*,State*> Apply(Ptr<CharSetExpression>& expression)
+		{
+			auto&& table = this->argument->table;
+			auto&& argument = *(this->argument);
+			auto& range = expression->range;
+			vector<int> result;
+			vector<int> final;
+			for (auto iter : range)
+			{
+				result.emplace_back(argument.GetTableIndex(iter));
+			}
+			if (expression->reverse == true)
+			{
+				vector<int> sum(table.size());
+				std::iota(sum.begin(), sum.end(), 0);
+				sort(result.begin(), result.end());
+				set_difference(sum.begin(), sum.end(), result.begin(), result.end(), inserter(final, final.begin()));
+			}
+			else
+			{
+				final = move(result);
+			}
+			return argument.NewCharSetStates(final);
+		}
+		pair<State*,State*> Apply(Ptr<NormalCharExpression>& expression)
+		{
+			auto&& index = this->argument->GetTableIndex(expression->range);
+			return this->argument->NewCharStates(index);
+		}
+		pair<State*,State*> Apply(Ptr<LoopExpression>& expression)
+		{
+			//auto&& substates = this->Invoke(expression->expression, this->argument);
 
+		}
+		pair<State*,State*> Apply(Ptr<SequenceExpression>& expression)
+		{
+			auto&& left = this->Invoke(expression->left, this->argument);
+			auto&& right = this->Invoke(expression->right, this->argument);
+			this->argument->ConnetWith(left.second, right.first);
+			return {left.first,right.second};
+		}
+		pair<State*,State*> Apply(Ptr<AlternationExpression>& expression)
+		{
+			auto&& left = this->Invoke(expression->left, this->argument);
+			auto&& right = this->Invoke(expression->right, this->argument);
+			return this->argument->NewAlterStates(left, right);
+		}
+		pair<State*,State*> Apply(Ptr<BeginExpression>& expression)
+		{
+			return this->argument->NewBeinAndEndStates(Edge::EdgeType::Head);
+		}
+		pair<State*,State*> Apply(Ptr<EndExpression>& expression)
+		{
+			return this->argument->NewBeinAndEndStates(Edge::EdgeType::Tail);
+		}
+		pair<State*,State*> Apply(Ptr<CaptureExpression>& expression)
+		{
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			return this->argument->NewCaptureStates(substates,expression->name); 
+		}
+		pair<State*,State*> Apply(Ptr<NoneCaptureExpression>& expression)
+		{
+			return this->Invoke(expression->expression, this->argument);
+		}
+		pair<State*,State*> Apply(Ptr<BackReferenceExpression>& expression)
+		{
+			return this->argument->NewBackReferenceStates(expression->name);
+		}
+		pair<State*,State*> Apply(Ptr<NegativeLookbehindExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+
+		}
+		pair<State*,State*> Apply(Ptr<PositiveLookbehindExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+
+		}
+		pair<State*,State*> Apply(Ptr<NegativeLookaheadExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+
+		}
+		pair<State*,State*> Apply(Ptr<PositivetiveLookaheadExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+		}
+	};
 	void Expression::BuildOrthogonal(Ptr<vector<int>>&target)
 	{
 		assert(target->size() == 0);

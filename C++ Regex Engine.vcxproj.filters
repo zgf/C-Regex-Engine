@@ -24,6 +24,9 @@
     <ClCompile Include="forward.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ztl_regex_automachine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Design.h">

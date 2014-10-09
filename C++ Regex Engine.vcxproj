@@ -151,6 +151,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ztl_regex_automachine.cpp" />
     <ClCompile Include="ztl_regex_expression.cpp" />
   </ItemGroup>
   <ItemGroup>

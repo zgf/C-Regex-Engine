@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <numeric>  
 #include "boost/any.hpp"
 
 namespace ztl
@@ -43,6 +44,9 @@ namespace ztl
 	using Ptr = shared_ptr < Type > ;
 	using boost::any;
 	using std::pair;
+	using std::set_difference;
+	using std::iota;
+	using std::inserter;
 }
 #include "ztl_regex_data.h"
 #include "ztl_regex_expression.h"

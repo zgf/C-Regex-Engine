@@ -68,9 +68,9 @@ namespace ztl
 	{
 		return make_shared<NoneCaptureExpression>( expression.expression);
 	}
-	RegexParseTreeWriter BackReferenc(const wstring name, const RegexParseTreeWriter& expression)
+	RegexParseTreeWriter BackReference(const wstring name)
 	{
-		return make_shared<BackReferenceExpression>(name, expression.expression);
+		return make_shared<BackReferenceExpression>(name);
 	}
 	RegexParseTreeWriter StringTail()
 	{

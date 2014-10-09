@@ -167,10 +167,10 @@ namespace ztl
 		assert(TestCase(L"(?:abc)", NoneCapture(One(L'a') + (One(L'b') + One(L'c')))));
 		assert(TestCase(L"[^a-g]c", CharSetCreator(true, { { 'a', 'a' }, {'b','b'}, { 'c', 'c' }, { 'd', 'f' }, { 'g', 'g' } }) + One('c')));
 		auto name_expression = Capture(L"1",One('a'));
-		assert(TestCase(L"(a)\\1", name_expression + BackReferenc(L"1", name_expression)));
+		assert(TestCase(L"(a)\\1", name_expression + BackReference(L"1")));
 		auto named_expression = Capture(L"one", One('a'));
 
-		assert(TestCase(L"(<one>a)\\k<one>", named_expression + BackReferenc(L"one", named_expression)));
+		assert(TestCase(L"(<one>a)\\k<one>", named_expression + BackReference(L"one")));
 		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, {'9','9'} })));
 		assert(TestCase(L"\\w", CharSetw()));
 		assert(TestCase(L"\\W", CharSetW()));

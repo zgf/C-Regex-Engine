@@ -184,12 +184,11 @@ namespace ztl
 	class BackReferenceExpression : public Expression
 	{
 	public:
-		Ptr<Expression>			expression;
 		wstring name;
 	public:
 		BackReferenceExpression() = default;
 
-		BackReferenceExpression(const wstring& _name,const Ptr<Expression>& _expression) : expression(_expression), name(_name)
+		BackReferenceExpression(const wstring& _name) :name(_name)
 		{
 		}
 
