@@ -517,37 +517,16 @@ namespace ztl
 	public:
 		pair<State*,State*> Apply(Ptr<CharSetExpression>& expression)
 		{
-			auto&& table = this->argument->table;
-			auto&& argument = *(this->argument);
-			auto& range = expression->range;
-			vector<int> result;
-			vector<int> final;
-			for (auto iter : range)
-			{
-				result.emplace_back(argument.GetTableIndex(iter));
-			}
-			if (expression->reverse == true)
-			{
-				vector<int> sum(table.size());
-				std::iota(sum.begin(), sum.end(), 0);
-				sort(result.begin(), result.end());
-				set_difference(sum.begin(), sum.end(), result.begin(), result.end(), inserter(final, final.begin()));
-			}
-			else
-			{
-				final = move(result);
-			}
-			return argument.NewCharSetStates(final);
+			return this->argument->NewCharSetStates(expression->reverse,expression->range);
 		}
 		pair<State*,State*> Apply(Ptr<NormalCharExpression>& expression)
 		{
-			auto&& index = this->argument->GetTableIndex(expression->range);
-			return this->argument->NewCharStates(index);
+			return this->argument->NewCharStates(expression->range);
 		}
 		pair<State*,State*> Apply(Ptr<LoopExpression>& expression)
 		{
-			//auto&& substates = this->Invoke(expression->expression, this->argument);
-
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			return this->argument->NewLoopStates(substates,expression->greedy, expression->begin, expression->end);
 		}
 		pair<State*,State*> Apply(Ptr<SequenceExpression>& expression)
 		{
@@ -585,22 +564,25 @@ namespace ztl
 		}
 		pair<State*,State*> Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
-
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			this->argument->NewLookAroundStates(substates,Edge::EdgeType::NegativeLookbehind);
 		}
 		pair<State*,State*> Apply(Ptr<PositiveLookbehindExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositiveLookbehind);
 
 		}
 		pair<State*,State*> Apply(Ptr<NegativeLookaheadExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookahead);
 
 		}
 		pair<State*,State*> Apply(Ptr<PositivetiveLookaheadExpression>& expression)
 		{
-			this->Invoke(expression->expression, this->argument);
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositivetiveLookahead);
 		}
 	};
 	void Expression::BuildOrthogonal(Ptr<vector<int>>&target)

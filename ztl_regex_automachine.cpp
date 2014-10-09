@@ -56,20 +56,39 @@ namespace ztl
 		ConnetWith(result);
 		return move(result);
 	}
-	AutoMachine::StatesType AutoMachine::NewCharStates(int index)
+	AutoMachine::StatesType AutoMachine::NewCharStates(const CharRange& range)
 	{
 		auto&& result = NewStates();
+		auto&& index = GetTableIndex(range);
 		ConnetWith(result, Edge::EdgeType::Char, index);
 		return move(result);
 	}
-	AutoMachine::StatesType AutoMachine::NewCharSetStates(const vector<int>& range)
+	AutoMachine::StatesType AutoMachine::NewCharSetStates(const bool reverse, const vector<CharRange>& range)
 	{
-		auto&& result = NewStates();
-		for (auto&& iter : range)
+		vector<int> result;
+		vector<int> final;
+		for(auto iter : range)
 		{
-			ConnetWith(result, Edge::EdgeType::Char, iter);
+			result.emplace_back(GetTableIndex(iter));
 		}
-		return move(result);
+		if(reverse == true)
+		{
+			vector<int> sum(table.size());
+			std::iota(sum.begin(), sum.end(), 0);
+			sort(result.begin(), result.end());
+			set_difference(sum.begin(), sum.end(), result.begin(), result.end(), inserter(final, final.begin()));
+		}
+		else
+		{
+			final = move(result);
+		}
+
+		auto&& states = NewStates();
+		for(auto&& iter : final)
+		{
+			ConnetWith(states, Edge::EdgeType::Char, iter);
+		}
+		return move(states);
 	}
 	AutoMachine::StatesType AutoMachine::NewAlterStates(StatesType& left, StatesType& right)
 	{
@@ -98,5 +117,24 @@ namespace ztl
 		auto&& result = NewStates();
 		ConnetWith(result, Edge::EdgeType::BackReference, name);
 		return move(result);
+	}
+	AutoMachine::StatesType AutoMachine::NewLookAroundStates(StatesType& substates, const Edge::EdgeType& type)
+	{
+		auto&& result = NewStates();
+		auto&& index = GetSubexpressionIndex(substates);
+		ConnetWith(result, type, index);
+		return move(result);
+	}
+	AutoMachine::StatesType AutoMachine::NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end)
+	{
+		auto&& result = NewStates();
+		auto&& index = GetSubexpressionIndex(substates);
+		ConnetWith(result, Edge::EdgeType::Loop, Edge::LoopUserData(index,begin,end,greedy));
+		return move(result);
+	}
+	int AutoMachine::GetSubexpressionIndex(const StatesType& substates)
+	{
+		this->subexpression.emplace_back(substates);
+		return subexpression.size() - 1;
 	}
 }
