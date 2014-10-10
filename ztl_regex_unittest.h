@@ -1,6 +1,6 @@
 #pragma once
 #include "ztl_regex_writer.h"
-
+#include "ztl_regex_optimizer.h"
 namespace ztl
 {
 	void TestLexer()
@@ -141,18 +141,34 @@ namespace ztl
 
 	}
 
+	string ws2s(const wstring& ws)
+	{
+		string curLocale = setlocale(LC_ALL, NULL); // curLocale = "C";
+
+		setlocale(LC_ALL, "chs");
+
+		const wchar_t* _Source = ws.c_str();
+		size_t _Dsize = 2 * ws.size() + 1;
+		char *_Dest = new char[_Dsize];
+		memset(_Dest, 0, _Dsize);
+		wcstombs(_Dest, _Source, _Dsize);
+		string result = _Dest;
+		delete[]_Dest;
+
+		setlocale(LC_ALL, curLocale.c_str());
+
+		return result;
+	}
+	
 	void TestParserTree()
 	{
-		auto TestCase = [](const wstring input, RegexParseTreeWriter& expect)
+		auto TestCase = [](const wstring input, RegexParseTreeWriter&& expect)
 		{
 			ztl::RegexLex lexer(input);
 			lexer.ParsingPattern();
 			ztl::RegexParser parser(input, lexer.GetTokens());
 			parser.RegexParsing();
 			auto&& expression = parser.GetExpressTree();
-			AutoMachine* machine = new AutoMachine(parser.GetCharTable());
-			auto&& ENFA = expression->BuildEpsilonNFA(machine);
-			
 			auto result = expression->IsEqual(expect.expression);
 			return result;
 		};
@@ -187,8 +203,8 @@ namespace ztl
 		assert(TestCase(L"^(?<=aa)", StringHead() + PositiveLookbehind(aa)));
 		assert(TestCase(L"^(?!aa)", StringHead() + NegativeLookahead(aa)));
 		assert(TestCase(L"^(?=aa)", StringHead() + PositivetiveLookahead(aa)));
-		//选择
-		//|a(?<=aa)
+		////选择
+		////|a(?<=aa)
 		assert(TestCase(L"(?<!av)|(zh[^a-c]{3,4}(a|f(?<=sy)))", NegativeLookbehind(One('a') + One('v')) | Capture(L"1",
 			One('z') + (One('h') + (
 			CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' } 
@@ -199,14 +215,179 @@ namespace ztl
 		
 
 	}
-	void PrintENFA(const AutoMachine::StatesType& states)
+	void PrintENFA(ofstream& output, unordered_map<int, std::string>& signmap, const wstring& input)
 	{
+		static int cast_index = 0;
+		output << "TestCaseIndex:" << cast_index++ << endl;
+		output << "Input:" << ws2s(input) << endl;
+		ztl::RegexLex lexer(input);
+		lexer.ParsingPattern();
+		ztl::RegexParser parser(input, lexer.GetTokens());
+		parser.RegexParsing();
+		auto&& expression = parser.GetExpressTree();
+		auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
+		auto machine = shared_machine.get();
+		auto&& states = machine->BuildNFA(expression);
+		auto& target = *machine;
+		
+		vector<bool> marks(target.states->size());
+		auto&& state_list = target.states;
+		function<void(int current, const State* element)> functor;
+		auto find_functor = [&state_list](State* target)->int
+		{
+			
+			for(auto index = 0; index < state_list->size(); index++)
+			{
+				auto&& may_target = state_list->at(index).get();
+				if(may_target == target)
+				{
+					return index;
+				}
+
+			}
+			throw std::exception("can't find target!");
+		};
+		functor = [&functor, &output, &find_functor, &machine,&marks, &signmap, &state_list](int current, const State* element)
+		{
+			if(marks[current] == false)
+			{
+				marks[current] = true;
+				//	wcout << "Current Node Address:" <<element << endl;
+				
+				for(auto&& iter : element->output)
+				{
+				/*	output << "		Edge Type:";
+					output << signmap[(int)(iter->type)].c_str() << endl;*/
+					//wcout << "	Edge Target Node Address:" << iter->target << endl;
+					
+					
+					if((int)(iter->type) == 1 )
+					{
+						output << "Current Node index:" << current << endl;
+						output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;
+						auto name = any_cast<wstring>(iter->userdata);
+						auto& captures = *machine->captures;
+						auto subindex = find_functor(captures[name].first);
+						output << "Find Subexpression:" << endl;
+
+						functor(subindex, captures[name].first);
+						output << " Subexpression End" << endl;
+
+					}
+					else if((int)(iter->type) == 3)
+					{
+						output << "Current Node index:" << current << endl;
+						output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;
+						output << "Find Subexpression:" << endl;
+
+						auto data = any_cast<Edge::LoopUserData>(iter->userdata);
+						auto& subexpression = *machine->subexpression;
+						auto subindex = find_functor(subexpression[data.index].first);
+						functor(subindex, subexpression[data.index].first);
+						output << " Subexpression End" << endl;
+					}
+					else if((int)(iter->type) == 7 || (int)(iter->type) == 8 || (int)(iter->type) == 9 || (int)(iter->type) == 10)
+					{
+						output << "Current Node index:" << current << endl;
+						output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;
+						output << "Find Subexpression:" << endl;
+
+						auto loop_index = any_cast<int>(iter->userdata);
+						auto& subexpression = *machine->subexpression;
+						auto subindex = find_functor(subexpression[loop_index].first);
+						functor(subindex, subexpression[loop_index].first);
+						output << " Subexpression End" << endl;
+
+					}
+					output << "Current Node index:" << current << endl;
+					output << "		Edge Type:";
+					output << signmap[(int)(iter->type)].c_str() << endl;
+					auto index = find_functor(iter->target);
+					output << "		Edge Target Node Index:" << index << endl;
+					functor(index, iter->target);
+				}
+			}
+		};
+		functor(find_functor(states.first)
+		, states.first);
+		output << "////////////////////////////////////////////////////////////////" << endl;
+	}
+	void TestENFA()
+	{
+		ofstream output("data.txt");
+		unordered_map<int, std::string> signmap;
+		signmap.insert({ 0, "Epsilon" });
+		signmap.insert({ 1, "Capture" });
+		signmap.insert({ 2, "BackReference" });
+		signmap.insert({ 3, "Loop" });
+		signmap.insert({ 4, "Char" });
+		signmap.insert({ 5, "Head" });
+		signmap.insert({ 6, "Tail" });
+		signmap.insert({ 7, "PositivetiveLookahead" });
+		signmap.insert({ 8, "NegativeLookahead" });
+		signmap.insert({ 9, "PositiveLookbehind" });
+		signmap.insert({ 10, "NegativeLookbehind" });
+		signmap.insert({ 11, "Final" }); //边后面是终结状态
+		PrintENFA(output, signmap, L"a");
+		PrintENFA(output, signmap, L"ab");
+		PrintENFA(output, signmap, L"a|a");
+		PrintENFA(output, signmap, L"a|b");
+		PrintENFA(output, signmap, L"(<one>a)\\k<one>");
+		PrintENFA(output, signmap, L"$(?<=aa)");
+		PrintENFA(output, signmap, L"(?!aa)");
+
+		PrintENFA(output, signmap, L"^(?=aa)");
+		PrintENFA(output, signmap, L"(?<!av)");
+		PrintENFA(output, signmap, L"zh[^a-c]");
+		PrintENFA(output, signmap, L"a|f(?<=sy)");
+		PrintENFA(output, signmap, L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))");
+		output.close();
+	}
+	void TestOptimizer()
+	{
+		vector<wstring> TestList = { L"a(?:ab|ds)dd",L"a", L"ab", L"a|b", L"(<one>a)\\k<one>", L"(as(ad|bc)|fd)", L"$(?<=aa)", L"^(?=aa)", L"(?<!av)", L"zh[^a-c]", L"a|f(?<=sy)", L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))" };
+		auto TestCase = [](const wstring& input)
+		{
+			vector<bool> result;
+			ztl::RegexLex lexer(input);
+			lexer.ParsingPattern();
+			ztl::RegexParser parser(input, lexer.GetTokens());
+			parser.RegexParsing();
+			auto&& expression = parser.GetExpressTree();
+			auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
+			auto machine = shared_machine.get();
+			auto&& states = machine->BuildNFA(expression);
+			RegexOptimizer optimizer(*shared_machine, states);
+			for(auto i = 0; i < machine->subexpression->size();i++)
+			{
+				auto subexpression = machine->subexpression->at(i);
+				result.push_back(optimizer.CheckPure(subexpression));
+			}
+			for(auto i = machine->captures->begin(); i != machine->captures->end(); i++)
+			{
+				auto subcapture = i->second;
+				result.push_back(optimizer.CheckPure(subcapture));
+			}
+			result.push_back(optimizer.CheckPure(states));
+			int a = 0;
+		
+		};
+		for (auto&& iter: TestList)
+		{
+			TestCase(iter);
+		}
+
 
 	}
 	void TestAllComponent()
 	{
 		//TestLexer();
-		//TestParserUnCrash();
-		TestParserTree();
+	//	TestParserUnCrash();
+		//TestParserTree();
+		TestENFA();
+		TestOptimizer();
 	}
 }

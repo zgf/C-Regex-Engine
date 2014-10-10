@@ -14,6 +14,8 @@ namespace ztl
 		end->input.push_back(edge);
 		edge->srouce = start;
 		edge->target = end;
+		assert(type != Edge::EdgeType::Epsilon);
+
 	}
 	void AutoMachine::ConnetWith(StatesType& target, const Edge::EdgeType& type)
 	{
@@ -29,6 +31,8 @@ namespace ztl
 		end->input.push_back(edge);
 		edge->srouce = start;
 		edge->target = end;
+		assert(type != Edge::EdgeType::Epsilon);
+
 	}
 	void AutoMachine::ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata)
 	{
@@ -97,11 +101,43 @@ namespace ztl
 	}
 	AutoMachine::StatesType AutoMachine::NewAlterStates(StatesType& left, StatesType& right)
 	{
-		//A-B C-D
-		//把BC合并
-		ConnetWith(left.second, right.first);
-		return {left.first,right.second};
+		
+		assert(left.first->input.empty());
+		assert(right.first->input.empty());
+		assert(left.second->output.empty());
+		assert(right.second->output.empty());
+		auto&& result = NewStates();
+		/*ConnetWith(result.first,left.first);
+		ConnetWith(result.first, right.first);
+		ConnetWith(left.second,result.second);
+		ConnetWith(right.second,result.second);*/
+		result.first->output = left.first->output;
+		//left.first->input empty 所以left节点的output的值可以随便修改,因为没有其他节点可达left.
+		result.first->output.insert(result.first->output.end(), right.first->output.begin(), right.first->output.end());
+		//修改输出边的源节点
+		for(auto&& edge : result.first->output)
+		{
+			edge->srouce = result.first;
+		}
+		result.second->input = left.second->input;
+		result.second->input.insert(result.second->input.end(), right.second->input.begin(), right.second->input.end());
+		//修改输入边到新节点
+		for (auto&& edge : result.second->input)
+		{
+			edge->target = result.second;
+		}
+		
+		return move(result);
 	}
+	AutoMachine::StatesType AutoMachine::NewSequenceStates(StatesType& left, StatesType& right)
+	{
+		//ConnetWith(left.second, right.first);
+		assert(left.second->output.empty());
+		assert(right.first->input.empty());
+		left.second->output = right.first->output;
+		return { left.first, right.second };
+	}
+
 	AutoMachine::StatesType AutoMachine::NewBeinAndEndStates(const Edge::EdgeType& type)
 	{
 		auto&& result = NewStates();
@@ -110,7 +146,7 @@ namespace ztl
 	}
 	AutoMachine::StatesType AutoMachine::NewCaptureStates(StatesType& substates, const wstring& name)
 	{
-		captures.insert({ name, substates });
+		captures->insert({ name, substates });
 		auto&& result = NewStates();
 		ConnetWith(result, Edge::EdgeType::Capture, name);
 		return move(result);
@@ -137,8 +173,8 @@ namespace ztl
 	}
 	int AutoMachine::GetSubexpressionIndex(const StatesType& substates)
 	{
-		this->subexpression.emplace_back(substates);
-		return subexpression.size() - 1;
+		this->subexpression->emplace_back(substates);
+		return subexpression->size() - 1;
 	}
 	AutoMachine::StatesType AutoMachine::NewFinalStates(StatesType& target)
 	{
@@ -146,4 +182,9 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return {target.first,end};
 	}
+	AutoMachine::StatesType AutoMachine::BuildNFA(const Ptr<Expression>& expression)
+	{
+		return expression->BuildNFA(this);
+	}
+
 }

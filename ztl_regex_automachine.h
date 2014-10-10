@@ -1,5 +1,6 @@
 #pragma once
 #include "forward.h"
+#include "ztl_regex_expression.h"
 namespace ztl
 {
 	class State;
@@ -75,19 +76,20 @@ namespace ztl
 	
 
 	//自动机
+	//构造非空NFA.
 	class AutoMachine
 	{
 	public:
 		using StatesType = pair < State*, State* > ;
-		unordered_map<wstring, StatesType> captures;
-		vector<StatesType>				 subexpression;//用在几个lookaround上
+		Ptr<unordered_map<wstring, StatesType>> captures;
+		Ptr<vector<StatesType>>				 subexpression;//用在几个lookaround上
 		Ptr<vector<CharRange>> table;
 		Ptr<vector<Ptr<State>>> states;
 		Ptr<vector<Ptr<Edge>>> edges;
 	public:
 		AutoMachine() = delete;
 		AutoMachine(const Ptr<vector<CharRange>>& _table) 
-			:table(_table),states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>())
+			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>())
 		{
 
 		}
@@ -104,12 +106,14 @@ namespace ztl
 		AutoMachine::StatesType NewLookAroundStates(StatesType& substates, const Edge::EdgeType& type);
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
+		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
 
+		
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
-
+		AutoMachine::StatesType BuildNFA(const Ptr<Expression>& expression);
 	private:
 		int GetTableIndex(const CharRange& target)const;
 		AutoMachine::StatesType NewStates();
@@ -118,4 +122,7 @@ namespace ztl
 		Edge* NewEdge();
 		int GetSubexpressionIndex(const StatesType& substates);
 	};
+
+	//正则自动机
+	
 }

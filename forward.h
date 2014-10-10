@@ -11,8 +11,9 @@
 #include <iostream>
 #include <sstream>
 #include <numeric>  
+#include <fstream>
 #include "boost/any.hpp"
-
+#include <locale>
 namespace ztl
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -43,12 +44,19 @@ namespace ztl
 	template<typename Type>
 	using Ptr = shared_ptr < Type > ;
 	using boost::any;
+	using boost::any_cast;
 	using std::pair;
 	using std::set_difference;
 	using std::iota;
 	using std::inserter;
+	using std::fstream;
+	using std::ofstream;
+	using std::string;
+	using std::wofstream;
+
 }
 #include "ztl_regex_data.h"
 #include "ztl_regex_expression.h"
 #include "ztl_regex_lex.h"
 #include "ztl_regex_parser.h"
+#include "ztl_regex_automachine.h"

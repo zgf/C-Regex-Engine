@@ -1,6 +1,5 @@
 #pragma once
 #include "ztl_regex_data.h"
-#include "ztl_regex_automachine.h"
 namespace ztl
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -8,6 +7,7 @@ namespace ztl
 	//////////////////////////////////////////////////////////////////////////
 	class IRegexAlogrithm;
 	class AutoMachine;
+	class State;
 	//////////////////////////////////////////////////////////////////////////
 	//		表达式声明
 	//////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@ namespace ztl
 		bool IsEqual(Ptr<Expression>& target);
 		Ptr<vector<CharRange>> GetCharSetTable();
 		void SetTreeCharSetOrthogonal(Ptr<vector<CharRange>>& table);
-		AutoMachine::StatesType BuildEpsilonNFA(AutoMachine* target);
+		pair<State*,State*> BuildNFA(AutoMachine* target);
 	private:
 		void BuildOrthogonal(Ptr<vector<int>>&target);
 	};

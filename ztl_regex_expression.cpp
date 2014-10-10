@@ -512,7 +512,18 @@ namespace ztl
 			this->Invoke(expression->expression, this->argument);
 		}
 	};
-	class BuildEpsilonNFAAlgorithm : public RegexAlogrithm <AutoMachine::StatesType, AutoMachine* >
+	/*
+	功能边种类 
+	Char	消耗字符
+	Loop //消耗字符
+	Capture //消耗字符
+	E //不消耗字符
+	Backreference 消耗字符
+	LookAround 不消耗字符
+	Begin
+	End
+	*/
+	class BuildNFAAlgorithm : public RegexAlogrithm <AutoMachine::StatesType, AutoMachine* >
 	{
 	public:
 		pair<State*,State*> Apply(Ptr<CharSetExpression>& expression)
@@ -532,8 +543,7 @@ namespace ztl
 		{
 			auto&& left = this->Invoke(expression->left, this->argument);
 			auto&& right = this->Invoke(expression->right, this->argument);
-			this->argument->ConnetWith(left.second, right.first);
-			return {left.first,right.second};
+			return this->argument->NewSequenceStates(left, right);
 		}
 		pair<State*,State*> Apply(Ptr<AlternationExpression>& expression)
 		{
@@ -590,9 +600,9 @@ namespace ztl
 		assert(target->size() == 0);
 		return BuildOrthogonalAlgorithm().Invoke(shared_from_this(), target);
 	}
-	AutoMachine::StatesType Expression::BuildEpsilonNFA(AutoMachine* target)
+	AutoMachine::StatesType Expression::BuildNFA(AutoMachine* target)
 	{
-		return target->NewFinalStates(BuildEpsilonNFAAlgorithm().Invoke(shared_from_this(), target));
+		return target->NewFinalStates(BuildNFAAlgorithm().Invoke(shared_from_this(), target));
 	}
 	bool Expression::IsEqual(Ptr<Expression>& target)
 	{
