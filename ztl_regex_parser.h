@@ -458,7 +458,6 @@ namespace ztl
 
 		Ptr<Expression> CaptureRight(int& index, const int end_index)
 		{
-			auto&& result = make_shared<CaptureExpression>();
 			wstring name;
 			if(tokens->at(index).type == TokenType::Named)
 			{

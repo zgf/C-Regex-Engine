@@ -8,8 +8,8 @@ namespace ztl
 	class CharRange
 	{
 	public:
-		wchar_t min;
-		wchar_t max;
+		int min;
+		int max;
 	public:
 		CharRange() :min(-1), max(-1)
 		{

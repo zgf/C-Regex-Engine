@@ -4,7 +4,6 @@ int main()
 {
 	ztl::TestAllComponent();
 	auto i = std::make_shared<int>(3);
-	auto p = i.get();
-	*p = 5;
+	
 	return 0;
 }

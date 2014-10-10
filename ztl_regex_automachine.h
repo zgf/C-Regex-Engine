@@ -103,6 +103,7 @@ namespace ztl
 		AutoMachine::StatesType NewBackReferenceStates(const wstring& name);
 		AutoMachine::StatesType NewLookAroundStates(StatesType& substates, const Edge::EdgeType& type);
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
+		AutoMachine::StatesType NewFinalStates(StatesType& target);
 
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
@@ -112,6 +113,8 @@ namespace ztl
 	private:
 		int GetTableIndex(const CharRange& target)const;
 		AutoMachine::StatesType NewStates();
+		State* NewOneState();
+
 		Edge* NewEdge();
 		int GetSubexpressionIndex(const StatesType& substates);
 	};

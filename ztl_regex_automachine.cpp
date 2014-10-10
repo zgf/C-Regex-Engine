@@ -44,6 +44,11 @@ namespace ztl
 		result.second = states->back().get();
 		return move(result);
 	}
+	State* AutoMachine::NewOneState()
+	{
+		this->states->emplace_back(make_shared<State>());
+		return states->back().get();
+	}
 	Edge* AutoMachine::NewEdge()
 	{
 		this->edges->emplace_back(make_shared<Edge>());
@@ -92,12 +97,10 @@ namespace ztl
 	}
 	AutoMachine::StatesType AutoMachine::NewAlterStates(StatesType& left, StatesType& right)
 	{
-		auto&& result = NewStates();
-		ConnetWith(result.first, left.first);
-		ConnetWith(result.second, left.second);
-		ConnetWith(result.first, right.first);
-		ConnetWith(result.second, right.second);
-		return move(result);
+		//A-B C-D
+		//°ÑBCºÏ²¢
+		ConnetWith(left.second, right.first);
+		return {left.first,right.second};
 	}
 	AutoMachine::StatesType AutoMachine::NewBeinAndEndStates(const Edge::EdgeType& type)
 	{
@@ -136,5 +139,11 @@ namespace ztl
 	{
 		this->subexpression.emplace_back(substates);
 		return subexpression.size() - 1;
+	}
+	AutoMachine::StatesType AutoMachine::NewFinalStates(StatesType& target)
+	{
+		auto&& end = NewOneState();
+		ConnetWith(target.second, end, Edge::EdgeType::Final);
+		return {target.first,end};
 	}
 }

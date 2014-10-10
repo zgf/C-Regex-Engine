@@ -10,8 +10,7 @@ namespace ztl
 			RegexLex lexer(input);
 			lexer.ParsingPattern();
 			auto& result = lexer.GetTokens();
-			int a = 0;
-			return equal(result->begin(), result->end(), expect.begin(), [](auto&&left, auto&&right)->bool
+			return equal(result->begin(), result->end(), expect.begin(), [](const RegexToken& left, const TokenType& right)->bool
 			{
 				return left.type == right;
 			});
@@ -21,7 +20,6 @@ namespace ztl
 			RegexLex lexer(input);
 			lexer.ParsingPattern();
 			auto& result = lexer.GetTokens();
-			int a = 0;
 			return equal(result->begin(), result->end(), expect.begin());
 		};
 		//one char
@@ -153,7 +151,8 @@ namespace ztl
 			parser.RegexParsing();
 			auto&& expression = parser.GetExpressTree();
 			AutoMachine* machine = new AutoMachine(parser.GetCharTable());
-			expression->BuildEpsilonNFA(machine);
+			auto&& ENFA = expression->BuildEpsilonNFA(machine);
+			
 			auto result = expression->IsEqual(expect.expression);
 			return result;
 		};
@@ -200,11 +199,14 @@ namespace ztl
 		
 
 	}
+	void PrintENFA(const AutoMachine::StatesType& states)
+	{
 
+	}
 	void TestAllComponent()
 	{
-		TestLexer();
-		TestParserUnCrash();
+		//TestLexer();
+		//TestParserUnCrash();
 		TestParserTree();
 	}
 }

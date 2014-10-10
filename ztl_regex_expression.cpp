@@ -592,8 +592,7 @@ namespace ztl
 	}
 	AutoMachine::StatesType Expression::BuildEpsilonNFA(AutoMachine* target)
 	{
-		return BuildEpsilonNFAAlgorithm().Invoke(shared_from_this(), target);
-
+		return target->NewFinalStates(BuildEpsilonNFAAlgorithm().Invoke(shared_from_this(), target));
 	}
 	bool Expression::IsEqual(Ptr<Expression>& target)
 	{
