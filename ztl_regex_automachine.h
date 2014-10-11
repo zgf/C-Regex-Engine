@@ -202,6 +202,7 @@ namespace ztl
 	{
 	public:
 		using StatesType = pair < State*, State* > ;
+		Ptr<Expression> ast;
 		Ptr<unordered_map<wstring, StatesType>> captures;
 		Ptr<vector<StatesType>>				 subexpression;//用在几个lookaround上
 		Ptr<vector<CharRange>> table;
@@ -213,6 +214,12 @@ namespace ztl
 			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>())
 		{
 
+		}
+		AutoMachine(RegexParser& parser)
+			:table(nullptr), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), ast(nullptr)
+		{
+			table = parser.GetCharTable();
+			ast = parser.GetExpressTree();
 		}
 	public:
 
@@ -234,7 +241,7 @@ namespace ztl
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
-		AutoMachine::StatesType BuildOptimizeNFA(const Ptr<Expression>& expression);
+		AutoMachine::StatesType BuildOptimizeNFA();
 	private:
 		int GetTableIndex(const CharRange& target)const;
 		AutoMachine::StatesType NewStates();

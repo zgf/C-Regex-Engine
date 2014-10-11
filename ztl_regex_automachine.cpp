@@ -182,9 +182,9 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return {target.first,end};
 	}
-	AutoMachine::StatesType AutoMachine::BuildOptimizeNFA(const Ptr<Expression>& expression)
+	AutoMachine::StatesType AutoMachine::BuildOptimizeNFA()
 	{
-		auto nfa = expression->BuildNFA(this);
+		auto nfa = ast->BuildNFA(this);
 		//优化子表达式, DFA化
 		OptimizeSubexpress();
 
@@ -324,11 +324,11 @@ namespace ztl
 					}
 					else
 					{
-						if(edge_nfa_map.find(65536) == edge_nfa_map.end())
+						if(edge_nfa_map.find(table->size()) == edge_nfa_map.end())
 						{
 							edge_nfa_map.insert({ 65536, unordered_set<State*>() });
 						}
-						edge_nfa_map[65536].insert(edge->target);
+						edge_nfa_map[table->size()].insert(edge->target);
 					}
 				}
 			}
@@ -344,23 +344,23 @@ namespace ztl
 					auto dfa_node = NewOneState();
 					nfa_dfa_map.insert({ nfaset, dfa_node });
 					dfa_nfa_map.insert({ dfa_node, nfaset });
-					if (key_iter->first <=65535)
+					if(key_iter->first <= table->size())
 					{
 						ConnetWith(front, dfa_node, Edge::EdgeType::Char, key_iter->first);
 					}
 					else
 					{
-						ConnetWith(front, dfa_node, Edge::EdgeType::Final, key_iter->first);
+						ConnetWith(front, dfa_node, Edge::EdgeType::Final);
 					}
 					dfaqueue.push_back(dfa_node);
 				}
-				else if(key_iter->first <= 65535)
+				else if(key_iter->first <= table->size())
 				{
 					ConnetWith(front, find_result->second, Edge::EdgeType::Char, key_iter->first);
 				}
 				else
 				{
-					ConnetWith(front, find_result->second, Edge::EdgeType::Final, key_iter->first);
+					ConnetWith(front, find_result->second, Edge::EdgeType::Final);
 				}
 
 			}

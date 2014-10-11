@@ -43,8 +43,8 @@ namespace ztl
 		wstring pattern;
 	public:
 		RegexParser() = delete;
-		RegexParser(const wstring& input_string, const Ptr<vector<RegexToken>>& token_list)
-			:tokens(token_list), pattern(input_string), expression(nullptr), table(nullptr)
+		RegexParser(const RegexLex& lexer)
+			:tokens(lexer.GetTokens()), pattern(lexer.GetRawString()), expression(nullptr), table(nullptr)
 		{
 			InitFirstMap();
 			InitActionMap();

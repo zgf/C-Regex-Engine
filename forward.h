@@ -14,6 +14,7 @@
 #include <fstream>
 #include "boost/any.hpp"
 #include <locale>
+#include <deque>
 namespace ztl
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -53,10 +54,11 @@ namespace ztl
 	using std::ofstream;
 	using std::string;
 	using std::wofstream;
-
+	using std::hash;
+	using std::deque;
+	using std::unordered_multimap;
 }
 #include "ztl_regex_data.h"
 #include "ztl_regex_expression.h"
 #include "ztl_regex_lex.h"
 #include "ztl_regex_parser.h"
-#include "ztl_regex_automachine.h"

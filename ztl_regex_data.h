@@ -116,4 +116,15 @@ namespace ztl
 			return !(*this == target);
 		}
 	};
+	enum class RegexControl
+	{
+		//MatchAll,//匹配全部才算成功
+		//MatchPartical,//部分匹配算成功
+		ExplicitCapture,//不使用捕获组功能
+		IgnoreCase,//大小写不敏感的匹配
+		Multiline,//
+		RightToLeft,//
+		Singleline,//
+		OnlyMatch,//仅匹配,不捕获
+	};
 }

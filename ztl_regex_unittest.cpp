@@ -82,7 +82,7 @@ namespace ztl
 		{
 			ztl::RegexLex lexer(input);
 			lexer.ParsingPattern();
-			ztl::RegexParser parser(input, lexer.GetTokens());
+			ztl::RegexParser parser(lexer);
 			parser.RegexParsing();
 		};
 		//ÆÕÍ¨×Ö·û Á¬½Ó
@@ -167,7 +167,7 @@ namespace ztl
 		{
 			ztl::RegexLex lexer(input);
 			lexer.ParsingPattern();
-			ztl::RegexParser parser(input, lexer.GetTokens());
+			ztl::RegexParser parser(lexer);
 			parser.RegexParsing();
 			auto&& expression = parser.GetExpressTree();
 			auto result = expression->IsEqual(expect.expression);
@@ -221,14 +221,12 @@ namespace ztl
 		static int cast_index = 0;
 		output << "TestCaseIndex:" << cast_index++ << endl;
 		output << "Input:" << ws2s(input) << endl;
-		ztl::RegexLex lexer(input);
+		RegexLex lexer(input);
 		lexer.ParsingPattern();
-		ztl::RegexParser parser(input, lexer.GetTokens());
+		RegexParser parser(lexer);
 		parser.RegexParsing();
-		auto&& expression = parser.GetExpressTree();
-		auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
-		auto machine = shared_machine.get();
-		auto&& states = machine->BuildOptimizeNFA(expression);
+		auto&& machine = make_shared<AutoMachine>(parser);
+		auto&& nfa = machine->BuildOptimizeNFA();
 		auto& target = *machine;
 		vector<bool> marks(target.states->size());
 		auto&& state_list = target.states;
@@ -311,8 +309,8 @@ namespace ztl
 				}
 			}
 		};
-		functor(find_functor(states.first)
-		, states.first);
+		functor(find_functor(nfa.first)
+			, nfa.first);
 		output << "////////////////////////////////////////////////////////////////" << endl;
 	}
 	void TestENFA()
@@ -362,15 +360,12 @@ namespace ztl
 		};
 		auto TestCase = [](wstring input)
 		{
-			vector<bool> result;
-			ztl::RegexLex lexer(input);
+			RegexLex lexer(input);
 			lexer.ParsingPattern();
-			ztl::RegexParser parser(input, lexer.GetTokens());
+			RegexParser parser(lexer);
 			parser.RegexParsing();
-			auto&& expression = parser.GetExpressTree();
-			auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
-			auto machine = shared_machine.get();
-			auto&& states = machine->BuildOptimizeNFA(expression);
+			auto&& machine = make_shared<AutoMachine>(parser);
+			auto&& nfa = machine->BuildOptimizeNFA();
 		};
 		for (auto&& iter: TestList)
 		{

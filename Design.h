@@ -170,4 +170,6 @@ Code
 对于捕获组和零宽断言有些性能上问题.lambda内捕获this貌似是拷贝的形式- -字符串内容都crash了.然后没有然后了,只能在lambda内新开个regexlex处理subexpression.不能直接在lambda内调用parseringpattern函数. 已解决
 wstring到string的转换问题 std::exception不支持wstring字符串 低优先级.
 parser的动作表和first表应该改为static的.每次都要构造开销太大
+finalset 不应该是set集合,应该只有一个
+unro set的hash没详细考虑
 */
