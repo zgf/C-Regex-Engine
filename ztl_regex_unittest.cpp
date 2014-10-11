@@ -1,6 +1,7 @@
 #pragma once
+#include "forward.h"
 #include "ztl_regex_writer.h"
-#include "ztl_regex_optimizer.h"
+#include "ztl_regex_automachine.h"
 namespace ztl
 {
 	void TestLexer()
@@ -227,9 +228,8 @@ namespace ztl
 		auto&& expression = parser.GetExpressTree();
 		auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
 		auto machine = shared_machine.get();
-		auto&& states = machine->BuildNFA(expression);
+		auto&& states = machine->BuildOptimizeNFA(expression);
 		auto& target = *machine;
-		
 		vector<bool> marks(target.states->size());
 		auto&& state_list = target.states;
 		function<void(int current, const State* element)> functor;
@@ -261,7 +261,7 @@ namespace ztl
 					//wcout << "	Edge Target Node Address:" << iter->target << endl;
 					
 					
-					if((int)(iter->type) == 1 )
+					if((int)(iter->type) == 1 || (int)(iter->type) ==2)
 					{
 						output << "Current Node index:" << current << endl;
 						output << "		Edge Type:";
@@ -346,10 +346,21 @@ namespace ztl
 		PrintENFA(output, signmap, L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))");
 		output.close();
 	}
-	void TestOptimizer()
+	void TestOptimize()
 	{
-		vector<wstring> TestList = { L"a(?:ab|ds)dd",L"a", L"ab", L"a|b", L"(<one>a)\\k<one>", L"(as(ad|bc)|fd)", L"$(?<=aa)", L"^(?=aa)", L"(?<!av)", L"zh[^a-c]", L"a|f(?<=sy)", L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))" };
-		auto TestCase = [](const wstring& input)
+		vector<wstring> TestList = {
+			L"a(?:ab|ds)dd",
+			L"a",
+			L"ab",
+			L"a|b", 
+			L"(<one>a)\\k<one>",
+			L"(as(ad|bc)|fd)", 
+			L"$(?<=aa)", L"^(?=aa)",
+			L"(?<!av)", L"zh[^a-c]", 
+			L"a|f(?<=sy)",
+			L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))",
+		};
+		auto TestCase = [](wstring input)
 		{
 			vector<bool> result;
 			ztl::RegexLex lexer(input);
@@ -359,21 +370,7 @@ namespace ztl
 			auto&& expression = parser.GetExpressTree();
 			auto shared_machine = make_shared<AutoMachine>(parser.GetCharTable());
 			auto machine = shared_machine.get();
-			auto&& states = machine->BuildNFA(expression);
-			RegexOptimizer optimizer(*shared_machine, states);
-			for(auto i = 0; i < machine->subexpression->size();i++)
-			{
-				auto subexpression = machine->subexpression->at(i);
-				result.push_back(optimizer.CheckPure(subexpression));
-			}
-			for(auto i = machine->captures->begin(); i != machine->captures->end(); i++)
-			{
-				auto subcapture = i->second;
-				result.push_back(optimizer.CheckPure(subcapture));
-			}
-			result.push_back(optimizer.CheckPure(states));
-			int a = 0;
-		
+			auto&& states = machine->BuildOptimizeNFA(expression);
 		};
 		for (auto&& iter: TestList)
 		{
@@ -384,10 +381,10 @@ namespace ztl
 	}
 	void TestAllComponent()
 	{
-		//TestLexer();
-	//	TestParserUnCrash();
-		//TestParserTree();
+		TestLexer();
+		TestParserUnCrash();
+		TestParserTree();
 		TestENFA();
-		TestOptimizer();
+		TestOptimize();
 	}
 }

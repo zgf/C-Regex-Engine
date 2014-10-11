@@ -182,9 +182,219 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return {target.first,end};
 	}
-	AutoMachine::StatesType AutoMachine::BuildNFA(const Ptr<Expression>& expression)
+	AutoMachine::StatesType AutoMachine::BuildOptimizeNFA(const Ptr<Expression>& expression)
 	{
-		return expression->BuildNFA(this);
+		auto nfa = expression->BuildNFA(this);
+		//优化子表达式, DFA化
+		OptimizeSubexpress();
+
+		if (CheckPure(nfa) == true)
+		{
+			this->NfaToDfa(nfa);
+		}
+		return move(nfa);
+	}
+
+}
+namespace ztl
+{
+	void AutoMachine::DFS(const AutoMachine::StatesType& expression)
+	{
+		unordered_set<State*> marks;
+		function<void(State* element)> functor;
+		functor = [this, &functor, &marks](State* element)
+		{
+			if(marks.find(element) == marks.end())
+			{
+				marks.insert(element);
+
+				for(auto&& iter : element->output)
+				{
+
+					functor(iter->target);
+				}
+			}
+		};
+		functor(expression.first);
+		//肯定查看到了尾部
+		assert(marks.find(expression.second) != marks.end());
+	}
+	bool AutoMachine::CheckPure(const AutoMachine::StatesType& expression)
+	{
+		unordered_set<State*> marks;
+		function<void(State* element)> functor;
+		bool result = true;
+		functor = [this, &result, &functor, &marks](State* element)
+		{
+			if(marks.find(element) == marks.end())
+			{
+				marks.insert(element);
+				for(auto&& iter : element->output)
+				{
+					if(iter->type != Edge::EdgeType::Char &&iter->type != Edge::EdgeType::Final)
+					{
+						result = false;
+						return;
+					}
+					functor(iter->target);
+					if(result == false)
+					{
+						return;
+					}
+				}
+			}
+		};
+		functor(expression.first);
+		return move(result);
+	}
+	//现存的边 
+	//Char 消耗字符
+	//BackRefer 消耗字符
+	//Capture 消耗字符
+	//LookAround 不消耗字符
+	//Begin 不消耗字符
+	//End 不消耗字符
+	//Final 不消耗字符
+	//Loop 消耗字符
+	//
+	/*
+	算法:
+	子表达式的纯正则表达式转DFA
+	*/
+	Edge::EdgeType AutoMachine::GetEdgeType(int index)const
+	{
+		if (index <=65535)
+		{
+			return Edge::EdgeType::Char;
+		}
+		else
+		{
+			return Edge::EdgeType::Final;
+		}
+	}
+	void AutoMachine::NfaToDfa(AutoMachine::StatesType& expression)
+	{
+		//前提条件.NFA只有 Char Final
+		
+		deque<State*> dfaqueue;
+		//DFA到组成DFA的NFA状态的映射.
+		//Final看成第65536号字符
+		//DFA到NFA状态集合的映射
+		unordered_map<State*, unordered_set<State*>> dfa_nfa_map;
+		//不同值的边到NFA状态集合的映射
+		unordered_map<int, unordered_set<State*>> edge_nfa_map;
+		//NFA状态集合到DFA节点映射
+		unordered_map<unordered_set<State*>,State*>nfa_dfa_map;
+		//DFA的终结状态
+		//unordered_set<State*> finalset;
+		State* finalset;
+
+		//初始化
+		assert(expression.first->input.empty());
+		auto dfa_start = NewOneState();
+		dfaqueue.push_back(dfa_start);
+		dfa_nfa_map.insert({ dfa_start, unordered_set<State*>({expression.first}) });
+		nfa_dfa_map.insert({ unordered_set<State*>({ expression.first }), dfa_start });
+		while(!dfaqueue.empty())
+		{
+			auto front = dfaqueue.front();
+			dfaqueue.pop_front();
+			//查看是否是DFA的终结状态
+			assert(dfa_nfa_map.find(front) != dfa_nfa_map.end());
+			if(dfa_nfa_map[front].find(expression.second)!=dfa_nfa_map[front].end())
+			{
+				finalset = front;
+			}
+
+			//收集边到nfa集合的映射
+			for(auto&& range = dfa_nfa_map[front].begin(); range != dfa_nfa_map[front].end(); ++range)
+			{
+				for(auto&& edge : (*range)->output)
+				{
+					assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final);
+					if(edge->type == Edge::EdgeType::Char)
+					{
+						auto&& index = any_cast<int>(edge->userdata);
+						if (edge_nfa_map.find(index)==edge_nfa_map.end())
+						{
+							edge_nfa_map.insert({ index, unordered_set<State*>() });
+						}
+						edge_nfa_map[index].insert(edge->target);
+						
+					}
+					else
+					{
+						if(edge_nfa_map.find(65536) == edge_nfa_map.end())
+						{
+							edge_nfa_map.insert({ 65536, unordered_set<State*>() });
+						}
+						edge_nfa_map[65536].insert(edge->target);
+					}
+				}
+			}
+
+			for(auto&& key_iter = edge_nfa_map.begin(); key_iter != edge_nfa_map.end();++key_iter)
+			{
+				//获取 边的nfa集合,然后查看dfa集合 有没有状态一致的dfa.有的话,建立边
+				//没有的话,新建dfa节点再建立边,并把dfa节点加入队列
+				auto&& nfaset = key_iter->second;
+				auto&& find_result = nfa_dfa_map.find(nfaset);
+				if(find_result == nfa_dfa_map.end())
+				{
+					auto dfa_node = NewOneState();
+					nfa_dfa_map.insert({ nfaset, dfa_node });
+					dfa_nfa_map.insert({ dfa_node, nfaset });
+					if (key_iter->first <=65535)
+					{
+						ConnetWith(front, dfa_node, Edge::EdgeType::Char, key_iter->first);
+					}
+					else
+					{
+						ConnetWith(front, dfa_node, Edge::EdgeType::Final, key_iter->first);
+					}
+					dfaqueue.push_back(dfa_node);
+				}
+				else if(key_iter->first <= 65535)
+				{
+					ConnetWith(front, find_result->second, Edge::EdgeType::Char, key_iter->first);
+				}
+				else
+				{
+					ConnetWith(front, find_result->second, Edge::EdgeType::Final, key_iter->first);
+				}
+
+			}
+			//清除边的映射
+			edge_nfa_map.clear();
+		}
+
+		//assert(finalset.size() == 1);
+		//auto& dfa_end = *finalset.begin();
+		expression.first = move(dfa_start);
+		expression.second = move(finalset);
+		//expression.second = move(dfa_end);
+	}
+	
+	
+	void  AutoMachine::OptimizeSubexpress()
+	{
+
+		for(auto&& iter = captures->begin(); iter != captures->end();++iter)
+		{
+			auto& subexpress = iter->second;
+			if (CheckPure(subexpress) == true)
+			{
+				NfaToDfa(subexpress);
+			}
+		}
+		for(auto&& i = 0; i < this->subexpression->size();++i)
+		{
+			auto&& subexpress = subexpression->at(i);
+			if(CheckPure(subexpress) == true)
+			{
+				NfaToDfa(subexpress);
+			}
+		}
 	}
 
 }
