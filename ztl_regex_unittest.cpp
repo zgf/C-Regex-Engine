@@ -379,7 +379,7 @@ namespace ztl
 		TestLexer();
 		TestParserUnCrash();
 		TestParserTree();
-		TestENFA();
+		//TestENFA();
 		TestOptimize();
 	}
 }

@@ -11,6 +11,7 @@ namespace ztl
 		wstring pattern;
 		Ptr<vector<RegexToken>> tokens;
 		unordered_map<wstring, function<void(int& index, Ptr<vector<RegexToken>>& tokens)>> action_map;
+		vector<RegexControl> control;
 	public:
 		RegexLex() = delete;
 		RegexLex(const wstring& target) : pattern(target), tokens(make_shared<vector<RegexToken>>())
@@ -18,6 +19,7 @@ namespace ztl
 			InitActionMap();
 		}
 		~RegexLex() = default;
+		
 		void ParsingPattern()
 		{
 			ParsingPattern(0, pattern.size());
