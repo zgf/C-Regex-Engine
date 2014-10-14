@@ -69,7 +69,7 @@ namespace ztl
 		CharSetd,
 		PositionB,
 		Positionb,
-		MatchAllSymbol,
+		GeneralMatch,
 		Component,
 		CaptureBegin,
 		CaptureEnd,
@@ -82,6 +82,8 @@ namespace ztl
 		LookbehindEnd,
 		Alternation,
 
+		RegexMacro,//(?#<name>expression)
+		MacroReference,//$<name>
 		//ParserToken
 		Unit,
 		Factor,

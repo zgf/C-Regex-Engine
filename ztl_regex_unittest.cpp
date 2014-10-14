@@ -42,13 +42,14 @@ namespace ztl
 		assert(ExpectEq(L"?", { TokenType::ChoseLoopGreedy }));
 		assert(ExpectEq(L"??", { TokenType::ChoseLoop }));
 
-		assert(ExpectEq(L".", { TokenType::MatchAllSymbol }));
+		assert(ExpectEq(L".", { TokenType::GeneralMatch }));
 		assert(ExpectEq(L"\\.", { TokenType::NormalChar }));
 
 		//test ²¶»ñ×é
 		assert(ExpectEq(L"(a)", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::CaptureEnd }));
 		assert(ExpectEqEx(L"(<bbb>a)", { { TokenType::CaptureBegin }, { TokenType::Named, 2, 5 }, { TokenType::NormalChar, 6, 7 }, { TokenType::CaptureEnd } }));
 		assert(ExpectEq(L"(?:a)", { TokenType::NoneCapture, TokenType::NormalChar, TokenType::CaptureEnd }));
+		assert(ExpectEqEx(L"(?#<bbb>a)$<bbb>", { { TokenType::RegexMacro }, { TokenType::Named, 4, 7 }, { TokenType::NormalChar, 8, 9 }, { TokenType::CaptureEnd }, {TokenType::MacroReference},{TokenType::Named,12,15 }));
 
 		//testÁã¿í¶ÏÑÔ
 		assert(ExpectEq(L"(?<=ac)", { TokenType::PositiveLookbehind, TokenType::NormalChar, TokenType::NormalChar, TokenType::LookbehindEnd }));
@@ -378,8 +379,8 @@ namespace ztl
 	{
 		TestLexer();
 		TestParserUnCrash();
-		TestParserTree();
+		//TestParserTree();
 		//TestENFA();
-		TestOptimize();
+		//TestOptimize();
 	}
 }

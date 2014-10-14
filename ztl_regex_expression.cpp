@@ -618,7 +618,7 @@ namespace ztl
 		sort(charset->begin(), charset->end());
 		charset->erase(unique(charset->begin(), charset->end()),charset->end());
 
-		for(auto i = 0; i < charset->size() - 1;i++)
+		for(size_t i = 0; i < charset->size() - 1;i++)
 		{
 			auto&& left = charset->at(i);
 			auto&& right = charset->at(i+1);

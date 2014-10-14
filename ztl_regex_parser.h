@@ -300,7 +300,7 @@ namespace ztl
 				return make_shared<EndExpression>();
 			} });
 
-			actions.insert({ TokenType::MatchAllSymbol, [](int& index)->Ptr < Expression >
+			actions.insert({ TokenType::GeneralMatch, [](int& index)->Ptr < Expression >
 			{
 				index += 1;
 				return make_shared<CharSetExpression>(false, vector<CharRange>({ { 0, 65535} }));
@@ -371,7 +371,7 @@ namespace ztl
 				TokenType::CharSetw,
 				TokenType::CharSetD,
 				TokenType::CharSetd,
-				TokenType::MatchAllSymbol,
+				TokenType::GeneralMatch,
 				TokenType::PositionB,
 				TokenType::Positionb,
 			})) });

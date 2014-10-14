@@ -387,7 +387,7 @@ namespace ztl
 				NfaToDfa(subexpress);
 			}
 		}
-		for(auto&& i = 0; i < this->subexpression->size();++i)
+		for(size_t i = 0; i < this->subexpression->size();++i)
 		{
 			auto&& subexpress = subexpression->at(i);
 			if(CheckPure(subexpress) == true)
