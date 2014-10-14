@@ -48,6 +48,8 @@ namespace ztl
 		State* states;
 		int    edge_index;
 		int	   input_index;
+		//当前状态通过当前边消耗的字符长度
+		int	   length;
 		bool meet_final;
 		SaveState() = default;
 		SaveState(State* _state, int edge, int input) :states(_state), edge_index(edge), input_index(input)
@@ -57,17 +59,22 @@ namespace ztl
 	};
 	class RegexInterpretor
 	{
-	private:
+	public:
 		wstring pattern;
 		vector<RegexControl> control;
 		Ptr<AutoMachine> machine;
 		pair<State*,State*> nfa;
 		vector<SaveState> state_stack;
+		vector<int>		   char_table;
+	public:
+		using ActionType = unordered_map < Edge::EdgeType, function<int(const wstring& input, const int begin,const int end,int& index, const State* current_state, const Edge* current_edge, RegexInterpretor& interpretor, RegexMatchResult& result)> >;
 	private:
-		static unordered_map<Edge::EdgeType, function<bool(const wstring& input, int& index, const State* current_state, const Edge* current_edge, RegexInterpretor& machine, RegexMatchResult& result)>> actions;
+		static ActionType actions;
 	public:
 		RegexInterpretor() =delete;
 		RegexInterpretor(const wstring& pattern,const vector<RegexControl>& control);
+	public:
+		static  ActionType InitActions();
 	public:
 		//从指定的起始位置开始，在输入字符串中搜索正则表达式的第一个匹配项，并且仅搜索指定数量的字符。
 		RegexMatchResult 	Match(const wstring& input,const int start = 0);
@@ -77,10 +84,11 @@ namespace ztl
 		const vector<RegexMatchResult> 	Matches(const wstring& input, int start = 0);
 		wstring Replace(const wstring& input,const wstring& repalce, int start);
 	private:
-		void RightToLeft(const wstring& text);
+		void RightToLeft( wstring& text);
 		//在start到end范围内寻找正则的第一个匹配
 		RegexMatchResult RegexMatchOne(const wstring& input, const int start, const int end);
 		//在start到end范围内寻找正则的全部匹配
 		vector<RegexMatchResult> RegexMatchAll(const wstring& input, const int start, const int end);
+		void InitTable();
 	};
 }

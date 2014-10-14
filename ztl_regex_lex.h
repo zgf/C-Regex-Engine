@@ -7,10 +7,11 @@ namespace ztl
 
 	class RegexLex
 	{
+	public:
+	static unordered_map<wstring, function<void(int& index, Ptr<vector<RegexToken>>& tokens)>> action_map;
 	private:
 		wstring pattern;
 		Ptr<vector<RegexToken>> tokens;
-		unordered_map<wstring, function<void(int& index, Ptr<vector<RegexToken>>& tokens)>> action_map;
 		vector<RegexControl> control;
 	public:
 		RegexLex() = delete;
@@ -31,17 +32,17 @@ namespace ztl
 				for(auto catch_length = 4; catch_length >= 1; catch_length--)
 				{
 					auto&& key = pattern.substr(index, catch_length);
-					if(action_map.find(key) != action_map.end())
+					if(RegexLex::action_map.find(key) != RegexLex::action_map.end())
 					{
-						//action_map执行完后,index指向正确的位置了.也就不用++了.
-						action_map[key](index, tokens);
+						//RegexLex::action_map执行完后,index指向正确的位置了.也就不用++了.
+						RegexLex::action_map[key](index, tokens);
 						break;
 					}
 
 					if(catch_length == 1)
 					{
 						//说明是普通字符. normal长度5 :)
-						action_map[L"normal"](index, tokens);
+						RegexLex::action_map[L"normal"](index, tokens);
 						//break;
 					}
 				}
@@ -223,11 +224,11 @@ namespace ztl
 		{
 			//action map需要在结束时将index设置向正确的位置.不用循环的时候++了.
 
-			action_map.insert({ L"normal", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"normal", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				NewNormalChar(index);
 			} });
-			action_map.insert({ L"\\", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				//第一种,普通字符.第二种后向引用
 				index += 1;
@@ -242,7 +243,7 @@ namespace ztl
 					NewNormalChar(index);
 				}
 			} });
-			action_map.insert({ L"\\k", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\k", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				//第二种后向引用
 				tokens->emplace_back(RegexToken(TokenType::BackReference));
@@ -255,7 +256,7 @@ namespace ztl
 			} });
 
 			//解析 自定义重复
-			action_map.insert({ L"{", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"{", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::LoopBegin));
 				++index;
@@ -295,69 +296,69 @@ namespace ztl
 				}
 			} });
 			//解析 预定义重复
-			action_map.insert({ L"*", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"*", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::KleeneLoopGreedy));
 				index += 1;
 			} });
-			action_map.insert({ L"*?", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"*?", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::KleeneLoop));
 				index += 2;
 			} });
-			action_map.insert({ L"+", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"+", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::PositiveLoopGreedy));
 				index += 1;
 			} });
-			action_map.insert({ L"+?", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"+?", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::PositiveLoop));
 				index += 2;
 			} });
-			action_map.insert({ L"?", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"?", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::ChoseLoopGreedy));
 				index += 1;
 			} });
-			action_map.insert({ L"??", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"??", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::ChoseLoop));
 				index += 2;
 			} });
 
 			//解析 串头串尾
-			action_map.insert({ L"$", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"$", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::StringTail));
 				index += 1;
 			} });
-			action_map.insert({ L"^", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"^", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::StringHead));
 				index += 1;
 			} });
 
-			action_map.insert({ L"[", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"[", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				index += 1;
 				ParseCharSet(TokenType::CharSet, index);
 			} });
-			action_map.insert({ L"[^", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"[^", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				index += 2;
 				ParseCharSet(TokenType::CharSetReverse, index);
 			} });
-			action_map.insert({ L"(", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseCapture(TokenType::CaptureBegin, 1, pattern, index, tokens);
 			} });
-			action_map.insert({ L"(?:", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(?:", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseCapture(TokenType::NoneCapture, 3, pattern, index, tokens);
 			} });
 			//解析命名捕获组
-			action_map.insert({ L"(<", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(<", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::CaptureBegin));
 
@@ -376,74 +377,75 @@ namespace ztl
 				index = index_end + 1;
 			} });
 
-			action_map.insert({ L"(?<=", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(?<=", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseLookAround(TokenType::PositiveLookbehind, TokenType::LookbehindEnd, 4, pattern, index, tokens);
 			} });
-			action_map.insert({ L"(?<!", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(?<!", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseLookAround(TokenType::NegativeLookbehind, TokenType::LookbehindEnd, 4, pattern, index, tokens);
 			} });
-			action_map.insert({ L"(?=", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(?=", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseLookAround(TokenType::PositivetiveLookahead, TokenType::LookaheadEnd, 3, pattern, index, tokens);
 			} });
-			action_map.insert({ L"(?!", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(?!", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				ParseLookAround(TokenType::NegativeLookahead, TokenType::LookaheadEnd, 3, pattern, index, tokens);
 			} });
 			//选择
-			action_map.insert({ L"|", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"|", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::Alternation));
 				index += 1;
 			} });
 			//注释
-			action_map.insert({ L"(#", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"(#", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				auto&& result = FindMetaSymbol(this->pattern, L')', index, exception("Lex Parsing Error, can't find ')' in '(#' action"));
 
 				index = result + 1;
 			} });
 			//通配符
-			action_map.insert({ L".", []( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L".", []( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				tokens->emplace_back(RegexToken(TokenType::MatchAllSymbol));
 				index += 1;
 			} });
 
-			action_map.insert({ L"\\s", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\s", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSets, index, tokens);
 			} });
-			action_map.insert({ L"\\S", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\S", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSetS, index, tokens);
 			} });
-			action_map.insert({ L"\\d", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\d", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSetd, index, tokens);
 			} });
-			action_map.insert({ L"\\D", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\D", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSetD, index, tokens);
 			} });
-			action_map.insert({ L"\\w", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\w", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSetw, index, tokens);
 			} });
-			action_map.insert({ L"\\W", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\W", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::CharSetW, index, tokens);
 			} });
-			action_map.insert({ L"\\b", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\b", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::Positionb, index, tokens);
 			} });
-			action_map.insert({ L"\\B", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
+			RegexLex::action_map.insert({ L"\\B", [this]( int& index, Ptr<vector<RegexToken>>& tokens)
 			{
 				SetPreDefineCharSet(TokenType::PositionB, index, tokens);
 			} });
 		}
 	};
+	unordered_map<wstring, function<void(int& index, Ptr<vector<RegexToken>>& tokens)>> RegexLex::action_map;
 }
