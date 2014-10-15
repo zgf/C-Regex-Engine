@@ -1,0 +1,32 @@
+/*
+1. 几个新功能的optional的
+//新功能
+		RegexMacro,//(?#<name>expression)
+		MacroReference,//$<name> 
+		语法分析已完成
+
+
+		//匹配行开始
+		LineBegin,
+		//匹配行结束
+		LineEnd,
+		2个词法部分完成
+		2个语法分析部分完成
+		//通配符,匹配非\n
+		GeneralMatch,
+		//匹配所有字符
+		MatchAllSymbol,
+		2个语法分析完成
+2. optional的实现
+
+ExplicitCapture,//不匿名捕获
+IgnoreCase,//大小写不敏感的匹配 修改字母表
+Multiline,// $^ 匹配行结尾和开头
+RightToLeft,//
+Singleline,//.匹配所有字符
+OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
+
+3.修改Loop * + ? 
+4. 修改DFA生成算法直接生成表 并且考虑E匹配
+5.
+*/

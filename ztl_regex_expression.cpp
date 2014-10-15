@@ -19,6 +19,8 @@ namespace ztl
 		virtual void Visitor(Ptr<PositiveLookbehindExpression>& expression) = 0;
 		virtual void Visitor(Ptr<NegativeLookaheadExpression>& expression) = 0;
 		virtual void Visitor(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
+		virtual void Visitor(Ptr<MacroExpression>& expression) = 0;
+		virtual void Visitor(Ptr<MacroReferenceExpression>& expression) = 0;
 	};
 	template<typename ReturnType, typename ParameterType>
 	class RegexAlogrithm : public IRegexAlogrithm
@@ -48,6 +50,9 @@ namespace ztl
 		virtual ReturnType Apply(Ptr<PositiveLookbehindExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<NegativeLookaheadExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
+		virtual ReturnType Apply(Ptr<MacroExpression>& expression) = 0;
+		virtual ReturnType Apply(Ptr<MacroReferenceExpression>& expression) = 0;
+
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
 		{
@@ -102,6 +107,14 @@ namespace ztl
 			return_value = Apply(expression);
 		}
 		void Visitor(Ptr<PositivetiveLookaheadExpression>& expression)
+		{
+			return_value = Apply(expression);
+		}
+		void Visitor(Ptr<MacroReferenceExpression>& expression)
+		{
+			return_value = Apply(expression);
+		}
+		void Visitor(Ptr<MacroExpression>& expression)
 		{
 			return_value = Apply(expression);
 		}
@@ -133,6 +146,8 @@ namespace ztl
 		virtual void Apply(Ptr<PositiveLookbehindExpression>& expression) = 0;
 		virtual void Apply(Ptr<NegativeLookaheadExpression>& expression) = 0;
 		virtual void Apply(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
+		virtual void Apply(Ptr<MacroExpression>& expression) = 0;
+		virtual void Apply(Ptr<MacroReferenceExpression>& expression) = 0;
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
 		{
@@ -187,6 +202,14 @@ namespace ztl
 			Apply(expression);
 		}
 		void Visitor(Ptr<PositivetiveLookaheadExpression>& expression)
+		{
+			Apply(expression);
+		}
+		void Visitor(Ptr<MacroExpression>& expression)
+		{
+			Apply(expression);
+		}
+		void Visitor(Ptr<MacroReferenceExpression>& expression)
 		{
 			Apply(expression);
 		}
@@ -357,6 +380,30 @@ namespace ztl
 			}
 			return false;
 		}
+
+		bool Apply(Ptr<MacroReferenceExpression>& expression)
+		{
+			auto expect = dynamic_pointer_cast<MacroReferenceExpression>(argument);
+			if(expect != nullptr&&expect->name != expression->name)
+			{
+				return  true;
+			
+			}
+			return false;
+		}
+		bool Apply(Ptr<MacroExpression>& expression)
+		{
+			auto expect = dynamic_pointer_cast<MacroExpression>(argument);
+			if(expect != nullptr)
+			{
+				auto&& result = Invoke(expect->expression, expression->expression);
+				if(expect->name == expression->name && result)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 
 	//字符集正交化算法
@@ -435,9 +482,17 @@ namespace ztl
 		{
 			this->Invoke(expression->expression, this->argument);
 		}
+		void Apply(Ptr<MacroExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+
+		}
+		void Apply(Ptr<MacroReferenceExpression>& expression)
+		{
+		}
 	};
 	//修改语法树的全部字符集为正规化后的字符集
-	class SetOrthogonalAlgorithm : public RegexAlogrithm < void, Ptr<vector<CharRange>> >
+	class SetOrthogonalAlgorithm : public RegexAlogrithm < void, Ptr<CharTable> >
 	{
 	public:
 		void Apply(Ptr<CharSetExpression>& expression)
@@ -446,13 +501,12 @@ namespace ztl
 			auto& range = expression->range;
 			for (auto&& iter : range)
 			{
-				for_each(this->argument->begin(), this->argument->end(), [&result, &iter](const CharRange& element)
+				auto&& min_index = this->argument->char_table->at(iter.min);
+				auto&& max_index = this->argument->char_table->at(iter.max);
+				for(auto i = max_index; i <= max_index;i++)
 				{
-					if (element.min>=iter.min&&element.max<=iter.max)
-					{
-						result.emplace_back(element);
-					}
-				});
+					result.emplace_back(this->argument->range_table->at(i));
+				}
 			}
 			range = move(result);
 		}
@@ -495,21 +549,25 @@ namespace ztl
 		void Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<PositiveLookbehindExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<NegativeLookaheadExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<PositivetiveLookaheadExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
+		}
+		void Apply(Ptr<MacroExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+		}
+		void Apply(Ptr<MacroReferenceExpression>& expression)
+		{
 		}
 	};
 	/*
@@ -594,8 +652,17 @@ namespace ztl
 			auto&& substates = this->Invoke(expression->expression, this->argument);
 			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositivetiveLookahead);
 		}
+		pair<State*, State*> Apply(Ptr<MacroReferenceExpression>& expression)
+		{//BUG
+			return this->argument->NewBackReferenceStates(expression->name);
+		}
+		pair<State*, State*> Apply(Ptr<MacroExpression>& expression)
+		{//BUG
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			return this->argument->NewCaptureStates(substates, expression->name);
+		}
 	};
-	void Expression::BuildOrthogonal(Ptr<vector<int>>&target)
+	void Expression::BuildOrthogonal(Ptr<vector<int>>& target)
 	{
 		assert(target->size() == 0);
 		return BuildOrthogonalAlgorithm().Invoke(shared_from_this(), target);
@@ -631,7 +698,7 @@ namespace ztl
 		result->emplace_back(CharRange(65535, 65535));
  		return move(result);
 	}
-	void Expression::SetTreeCharSetOrthogonal(Ptr<vector<CharRange>>& target)
+	void Expression::SetTreeCharSetOrthogonal(Ptr<CharTable>& target)
 	{
 		return SetOrthogonalAlgorithm().Invoke(shared_from_this(), target);
 	}
@@ -690,5 +757,13 @@ namespace ztl
 	void PositivetiveLookaheadExpression::Apply(IRegexAlogrithm& algorithm)
 	{
 		algorithm.Visitor(dynamic_pointer_cast<PositivetiveLookaheadExpression>(shared_from_this()));
+	};
+	void MacroExpression::Apply(IRegexAlogrithm& algorithm)
+	{
+		algorithm.Visitor(dynamic_pointer_cast<MacroExpression>(shared_from_this()));
+	};
+	void MacroReferenceExpression::Apply(IRegexAlogrithm& algorithm)
+	{
+		algorithm.Visitor(dynamic_pointer_cast<MacroReferenceExpression>(shared_from_this()));
 	};
 }

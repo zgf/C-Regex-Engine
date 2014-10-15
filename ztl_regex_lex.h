@@ -8,17 +8,20 @@ namespace ztl
 	class RegexLex
 	{
 	private:
-		using ActionType = unordered_map < wstring, function<void(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)> > ;
+		using ActionType = unordered_map < wstring, function<void(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)> >;
 	private:
 		static ActionType action_map;
 		wstring pattern;
 		Ptr<vector<RegexToken>> tokens;
+		Ptr<vector<RegexControl>> optional;
 	public:
 		RegexLex() = delete;
-		RegexLex(const wstring& target) : pattern(target), tokens(make_shared<vector<RegexToken>>())
+		RegexLex(const wstring& target) : pattern(target), tokens(make_shared<vector<RegexToken>>()), optional(make_shared<vector<RegexControl>>())
 		{
 		}
-		
+		RegexLex(const wstring& target, const Ptr<vector<RegexControl>>& _optional) : pattern(target), tokens(make_shared<vector<RegexToken>>()), optional(_optional)
+		{
+		}
 		~RegexLex() = default;
 		void ParsingPattern()
 		{

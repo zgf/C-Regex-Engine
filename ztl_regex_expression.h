@@ -25,7 +25,7 @@ namespace ztl
 		virtual void Apply(IRegexAlogrithm& algorithm) = 0;
 		bool IsEqual(Ptr<Expression>& target);
 		Ptr<vector<CharRange>> GetCharSetTable();
-		void SetTreeCharSetOrthogonal(Ptr<vector<CharRange>>& table);
+		void SetTreeCharSetOrthogonal(Ptr<CharTable>& target);
 		pair<State*,State*> BuildNFA(AutoMachine* target);
 	private:
 		void BuildOrthogonal(Ptr<vector<int>>&target);
@@ -165,6 +165,39 @@ namespace ztl
 		}
 		void Apply(IRegexAlogrithm& algorithm);
 
+	};
+
+	class MacroExpression : public Expression
+	{
+	public:
+		wstring			name;
+		Ptr<Expression> expression;
+	public:
+		MacroExpression() = default;
+
+		MacroExpression(const wstring& _name, const Ptr<Expression>& _expression) :name(_name), expression(_expression)
+		{
+		}
+		~MacroExpression()
+		{
+		}
+		void Apply(IRegexAlogrithm& algorithm);
+
+	};
+	class MacroReferenceExpression : public Expression
+	{
+	public:
+		wstring			name;
+	public:
+		MacroReferenceExpression() = default;
+
+		MacroReferenceExpression(const wstring& _name) :name(_name)
+		{
+		}
+		~MacroReferenceExpression()
+		{
+		}
+		void Apply(IRegexAlogrithm& algorithm);
 	};
 	//·Ç²¶»ñ×é
 	class NoneCaptureExpression : public Expression

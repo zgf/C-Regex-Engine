@@ -23,7 +23,6 @@ namespace ztl
 			PositiveLookbehind,
 			NegativeLookbehind,
 			Final, //边后面是终结状态
-
 		};
 		struct LoopUserData
 		{
@@ -208,15 +207,16 @@ namespace ztl
 		Ptr<vector<CharRange>> table;
 		Ptr<vector<Ptr<State>>> states;
 		Ptr<vector<Ptr<Edge>>> edges;
+		Ptr<unordered_map<wstring, StatesType>> macroexpression;//宏表达式
 	public:
 		AutoMachine() = delete;
 		AutoMachine(const Ptr<vector<CharRange>>& _table) 
-			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>())
+			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), macroexpression(make_shared <unordered_map<wstring, StatesType >> ())
 		{
 
 		}
 		AutoMachine(RegexParser& parser)
-			:table(nullptr), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), ast(nullptr)
+			:table(nullptr), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), ast(nullptr), macroexpression(make_shared <unordered_map<wstring, StatesType >>())
 		{
 			table = parser.GetCharTable();
 			ast = parser.GetExpressTree();

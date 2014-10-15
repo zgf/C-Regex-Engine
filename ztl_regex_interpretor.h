@@ -61,7 +61,7 @@ namespace ztl
 	{
 	public:
 		wstring pattern;
-		vector<RegexControl> control;
+		Ptr<vector<RegexControl>> optional;
 		Ptr<AutoMachine> machine;
 		pair<State*,State*> nfa;
 		vector<SaveState> state_stack;
@@ -72,7 +72,7 @@ namespace ztl
 		static ActionType actions;
 	public:
 		RegexInterpretor() =delete;
-		RegexInterpretor(const wstring& pattern,const vector<RegexControl>& control);
+		RegexInterpretor(const wstring& pattern, const Ptr<vector<RegexControl>>_optional);
 	public:
 		static  ActionType InitActions();
 	public:

@@ -10,7 +10,7 @@ namespace ztl
 		{
 			RegexLex lexer(input);
 			lexer.ParsingPattern();
-			auto& result = lexer.GetTokens();
+			auto&& result = lexer.GetTokens();
 			return equal(result->begin(), result->end(), expect.begin(), [](const RegexToken& left, const TokenType& right)->bool
 			{
 				return left.type == right;
@@ -20,7 +20,7 @@ namespace ztl
 		{
 			RegexLex lexer(input);
 			lexer.ParsingPattern();
-			auto& result = lexer.GetTokens();
+			auto&& result = lexer.GetTokens();
 			return equal(result->begin(), result->end(), expect.begin());
 		};
 		//one char
@@ -49,7 +49,7 @@ namespace ztl
 		assert(ExpectEq(L"(a)", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::CaptureEnd }));
 		assert(ExpectEqEx(L"(<bbb>a)", { { TokenType::CaptureBegin }, { TokenType::Named, 2, 5 }, { TokenType::NormalChar, 6, 7 }, { TokenType::CaptureEnd } }));
 		assert(ExpectEq(L"(?:a)", { TokenType::NoneCapture, TokenType::NormalChar, TokenType::CaptureEnd }));
-		assert(ExpectEqEx(L"(?#<bbb>a)$<bbb>", { { TokenType::RegexMacro }, { TokenType::Named, 4, 7 }, { TokenType::NormalChar, 8, 9 }, { TokenType::CaptureEnd }, {TokenType::MacroReference},{TokenType::Named,12,15 }));
+		assert(ExpectEqEx(L"(?#<bbb>a)$<bbb>", { { TokenType::RegexMacro }, { TokenType::Named, 4, 7 }, { TokenType::NormalChar, 8, 9 }, { TokenType::CaptureEnd }, { TokenType::MacroReference }, { TokenType::Named, 12, 15 } }));
 
 		//test¡„øÌ∂œ—‘
 		assert(ExpectEq(L"(?<=ac)", { TokenType::PositiveLookbehind, TokenType::NormalChar, TokenType::NormalChar, TokenType::LookbehindEnd }));
@@ -235,7 +235,7 @@ namespace ztl
 		auto find_functor = [&state_list](State* target)->int
 		{
 			
-			for(auto index = 0; index < state_list->size(); index++)
+			for(size_t index = 0; index < state_list->size(); index++)
 			{
 				auto&& may_target = state_list->at(index).get();
 				if(may_target == target)

@@ -69,7 +69,10 @@ namespace ztl
 		CharSetd,
 		PositionB,
 		Positionb,
+		//通配符,匹配非\n
 		GeneralMatch,
+		//匹配所有字符
+		MatchAllSymbol,
 		Component,
 		CaptureBegin,
 		CaptureEnd,
@@ -81,9 +84,15 @@ namespace ztl
 		LookaheadEnd,
 		LookbehindEnd,
 		Alternation,
-
+		//新功能
 		RegexMacro,//(?#<name>expression)
 		MacroReference,//$<name>
+
+		//匹配行开始
+		LineBegin,
+		//匹配行结束
+		LineEnd,
+
 		//ParserToken
 		Unit,
 		Factor,
@@ -128,5 +137,11 @@ namespace ztl
 		RightToLeft,//
 		Singleline,//
 		OnlyMatch,//仅匹配,不捕获
+	};
+	class CharTable
+	{
+	public:
+		Ptr<vector<CharRange>> range_table;//字母范围表
+		Ptr<vector<int>> char_table;//总的字母表
 	};
 }
