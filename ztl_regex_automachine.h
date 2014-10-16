@@ -13,18 +13,18 @@ namespace ztl
 	{
 	public:
 		using StatesType = pair < State*, State* > ;
-		Ptr<Expression> ast;
+		Ptr<Expression>							ast;
 		Ptr<unordered_map<wstring, StatesType>> captures;
 		Ptr<vector<StatesType>>					anonymity_captures;//匿名捕获组
 		Ptr<vector<StatesType>>					subexpression;//用在几个lookaround上
-		Ptr<vector<CharRange>> table;
-		Ptr<vector<Ptr<State>>> states;
-		Ptr<vector<Ptr<Edge>>> edges;
-		unordered_map<wstring, StatesType> macro_expression;//宏表达式
-		int capture_count = 0;//捕获组计数
+		Ptr<CharTable>							table;
+		Ptr<vector<Ptr<State>>>					states;
+		Ptr<vector<Ptr<Edge>>>					edges;
+		unordered_map<wstring, StatesType>		macro_expression;//宏表达式
+		int										capture_count = 0;//捕获组计数
 	public:
 		AutoMachine() = delete;
-		AutoMachine(const Ptr<vector<CharRange>>& _table)
+		AutoMachine(const Ptr<CharTable>& _table)
 			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), macro_expression()
 		{
 		}
@@ -61,7 +61,8 @@ namespace ztl
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
 		AutoMachine::StatesType BuildOptimizeNFA();
 	private:
-		int GetTableIndex(const CharRange& target)const;
+		void GetTableIndex(const CharRange& target,vector<int>& range)const;
+		int GetTableIndex(const int& target)const;
 		AutoMachine::StatesType NewStates();
 		State* NewOneState();
 

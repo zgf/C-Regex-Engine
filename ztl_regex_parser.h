@@ -70,9 +70,9 @@ namespace ztl
 		{
 			return expression;
 		}
-		Ptr<vector<CharRange>> GetCharTable()const
+		Ptr<CharTable> GetCharTable()const
 		{
-			return char_table->range_table;
+			return char_table;
 		}
 		static Ptr<Expression> Alter(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
 

@@ -2,9 +2,19 @@
 #include "ztl_regex_automachine.h"
 namespace ztl
 {
-	int AutoMachine::GetTableIndex(const CharRange& target)const
+	void AutoMachine::GetTableIndex(const CharRange& target, vector<int>& range)const
 	{
-		return distance(table->begin(), find(table->begin(), table->end(), target));
+
+		auto&& min_index = (*table->char_table)[target.min];
+		auto&& max_index = (*table->char_table)[target.max];
+		for(auto i = min_index; i <= max_index;i++)
+		{
+			range.emplace_back(i);
+		}
+	}
+	int AutoMachine::GetTableIndex(const int& target)const
+	{
+		return (*table->char_table)[target];
 	}
 	void AutoMachine::ConnetWith(State*& start, State*& end, const Edge::EdgeType& type)
 	{
@@ -66,7 +76,8 @@ namespace ztl
 	AutoMachine::StatesType AutoMachine::NewCharStates(const CharRange& range)
 	{
 		auto&& result = NewStates();
-		auto&& index = GetTableIndex(range);
+		assert(range.min == range.max);
+		auto&& index = GetTableIndex(range.min);
 		ConnetWith(result, Edge::EdgeType::Char, index);
 		return move(result);
 	}
@@ -76,11 +87,12 @@ namespace ztl
 		vector<int> final;
 		for(auto iter : range)
 		{
-			result.emplace_back(GetTableIndex(iter));
+			GetTableIndex(iter,result);
 		}
+		
 		if(reverse == true)
 		{
-			vector<int> sum(table->size());
+			vector<int> sum(table->range_table->size());
 			std::iota(sum.begin(), sum.end(), 0);
 			sort(result.begin(), result.end());
 			set_difference(sum.begin(), sum.end(), result.begin(), result.end(), inserter(final, final.begin()));
@@ -400,11 +412,11 @@ namespace ztl
 					}
 					else
 					{
-						if(edge_nfa_map.find(table->size()) == edge_nfa_map.end())
+						if(edge_nfa_map.find(table->range_table->size()) == edge_nfa_map.end())
 						{
 							edge_nfa_map.insert({ 65536, unordered_set<State*>() });
 						}
-						edge_nfa_map[table->size()].insert(edge->target);
+						edge_nfa_map[table->range_table->size()].insert(edge->target);
 					}
 				}
 			}
@@ -420,7 +432,7 @@ namespace ztl
 					auto dfa_node = NewOneState();
 					nfa_dfa_map.insert({ nfaset, dfa_node });
 					dfa_nfa_map.insert({ dfa_node, nfaset });
-					if(key_iter->first <= table->size())
+					if(key_iter->first <= table->range_table->size())
 					{
 						ConnetWith(front, dfa_node, Edge::EdgeType::Char, key_iter->first);
 					}
@@ -430,7 +442,7 @@ namespace ztl
 					}
 					dfaqueue.push_back(dfa_node);
 				}
-				else if(key_iter->first <= table->size())
+				else if(key_iter->first <= table->range_table->size())
 				{
 					ConnetWith(front, find_result->second, Edge::EdgeType::Char, key_iter->first);
 				}
