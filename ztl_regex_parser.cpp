@@ -81,14 +81,32 @@ namespace ztl
 		char_table->char_table = CreatWCharTable(char_table->range_table);
 		expression->SetTreeCharSetOrthogonal(char_table);
 	}
-
-	Ptr<vector<int>> RegexParser::CreatWCharTable(const Ptr<vector<CharRange>>& table)
+	//template<typename pointer_type,typename value_type>
+	//void fill_type(pointer_type start,size_t count,value_type value)
+	//{
+	//	auto add_count = 1;
+	//	int loop_number = (int)log2(count);
+	//	*start = value;
+	//	for(auto i = 0; i < loop_number; i++)
+	//	{
+	//		//std::copy(start, start + add_count, start + add_count);
+	//		memcpy_s(start + add_count, add_count, start, add_count);
+	//		add_count <<= 1;
+	//	}
+	//	auto rest_block = count - add_count;
+	////	std::copy(start, start + rest_block, start + add_count);
+	//	memcpy_s(start + add_count, rest_block, start, rest_block);
+	//}
+	Ptr<vector<unsigned short>> RegexParser::CreatWCharTable(const Ptr<vector<CharRange>>& table)
 	{
-		Ptr<vector<int>> result(make_shared<vector<int>>(65536));
+		auto result(make_shared<vector<unsigned short>>(65536));
 		for(size_t i = 0; i < table->size(); i++)
 		{
 			auto&& element = (*table)[i];
-			fill_n(result->begin() + element.min, element.max - element.min + 1, i);
+			//fill_type(result->_Myfirst, element.max - element.min + 1, i);
+			auto&& count = element.max - element.min + 1;
+			fill_n(result->begin(), move(count), i);
+
 		}
 		return move(result);
 	}

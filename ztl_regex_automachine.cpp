@@ -4,10 +4,9 @@ namespace ztl
 {
 	void AutoMachine::GetTableIndex(const CharRange& target, vector<int>& range)const
 	{
-
 		auto&& min_index = (*table->char_table)[target.min];
 		auto&& max_index = (*table->char_table)[target.max];
-		for(auto i = min_index; i <= max_index;i++)
+		for(auto i = min_index; i <= max_index; i++)
 		{
 			range.emplace_back(i);
 		}
@@ -87,9 +86,9 @@ namespace ztl
 		vector<int> final;
 		for(auto iter : range)
 		{
-			GetTableIndex(iter,result);
+			GetTableIndex(iter, result);
 		}
-		
+
 		if(reverse == true)
 		{
 			vector<int> sum(table->range_table->size());
@@ -240,17 +239,17 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return { target.first, end };
 	}
-	AutoMachine::StatesType AutoMachine::BuildOptimizeNFA()
+	void AutoMachine::BuildOptimizeNFA()
 	{
-		auto nfa = ast->BuildNFA(this);
+		*nfa_expression = ast->BuildNFA(this);
 		//优化子表达式, DFA化
 		OptimizeSubexpress();
 
-		if(CheckPure(nfa) == true)
+		if(CheckPure(*nfa_expression) == true)
 		{
-			this->NfaToDfa(nfa);
+		dfa_expression = make_shared<DFA>();
+		*dfa_expression = this->NfaToDfa(*nfa_expression);
 		}
-		return move(nfa);
 	}
 }
 namespace ztl
@@ -264,7 +263,7 @@ namespace ztl
 		while(!queue.empty())
 		{
 			auto&& front = queue.front();
-			for(auto i = 0; i < front->output.size(); i++)
+			for(size_t i = 0; i < front->output.size(); i++)
 			{
 				auto& current_edge = front->output[i];
 
@@ -361,38 +360,36 @@ namespace ztl
 			return Edge::EdgeType::Final;
 		}
 	}
-	void AutoMachine::NfaToDfa(AutoMachine::StatesType& expression)
+
+	DFA AutoMachine::NfaToDfa(AutoMachine::StatesType& expression)
 	{
-		//前提条件.NFA只有 Char Final
+		//前提条件.NFA只有 Char Final E
+		//表的值-1表示不接受状态,表值final_index表示接受状态
+		//第一维是当前节点编号,第二维是边index,值是下一个节点号
+		DFA result;
+		int final_index = table->range_table->size();
+		int edge_sum = final_index + 1;
+		vector<vector<int>> dfa_table;
+		//编号所代表的dfa到nfa集合的映射
+		vector<unordered_set<State*>> dfa_nfa_map;
+		//nfa到dfa的集合的映射
+		unordered_map<unordered_set<State*>, int> nfa_dfa_map;
+		//待处理的dfa队列
+		deque<int> dfaqueue;
 
-		deque<State*> dfaqueue;
-		//DFA到组成DFA的NFA状态的映射.
-		//Final看成第65536号字符
-		//DFA到NFA状态集合的映射
-		unordered_map<State*, unordered_set<State*>> dfa_nfa_map;
-		//不同值的边到NFA状态集合的映射
+		vector<int> final_dfa;
+		//	//不同值的边到NFA状态集合的映射
 		unordered_map<int, unordered_set<State*>> edge_nfa_map;
-		//NFA状态集合到DFA节点映射
-		unordered_map<unordered_set<State*>, State*>nfa_dfa_map;
-		//DFA的终结状态
-		//unordered_set<State*> finalset;
-		State* finalset;
-
-		//初始化
-		assert(expression.first->input.empty());
-		auto dfa_start = NewOneState();
-		dfaqueue.push_back(dfa_start);
-		dfa_nfa_map.insert({ dfa_start, unordered_set<State*>({ expression.first }) });
-		nfa_dfa_map.insert({ unordered_set<State*>({ expression.first }), dfa_start });
+		dfa_table.emplace_back(vector<int>(edge_sum, -1));
+		dfa_nfa_map.emplace_back(EpsilonNFASet(expression.first));
+		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });
 		while(!dfaqueue.empty())
 		{
-			auto front = dfaqueue.front();
-			dfaqueue.pop_front();
-			//查看是否是DFA的终结状态
-			assert(dfa_nfa_map.find(front) != dfa_nfa_map.end());
+			auto&& front = dfaqueue.front();
+			//assert(find(dfa_nfa_map.begin(),dfa_nfa_map.end(),front) != dfa_nfa_map.end());
 			if(dfa_nfa_map[front].find(expression.second) != dfa_nfa_map[front].end())
 			{
-				finalset = front;
+				final_dfa.emplace_back(front);
 			}
 
 			//收集边到nfa集合的映射
@@ -400,7 +397,7 @@ namespace ztl
 			{
 				for(auto&& edge : (*range)->output)
 				{
-					assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final);
+					assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final || edge->type == Edge::EdgeType::Epsilon);
 					if(edge->type == Edge::EdgeType::Char)
 					{
 						auto&& index = any_cast<int>(edge->userdata);
@@ -410,11 +407,11 @@ namespace ztl
 						}
 						edge_nfa_map[index].insert(edge->target);
 					}
-					else
+					else if(edge->type == Edge::EdgeType::Final)
 					{
 						if(edge_nfa_map.find(table->range_table->size()) == edge_nfa_map.end())
 						{
-							edge_nfa_map.insert({ 65536, unordered_set<State*>() });
+							edge_nfa_map.insert({ final_index, unordered_set<State*>() });
 						}
 						edge_nfa_map[table->range_table->size()].insert(edge->target);
 					}
@@ -426,42 +423,67 @@ namespace ztl
 				//获取 边的nfa集合,然后查看dfa集合 有没有状态一致的dfa.有的话,建立边
 				//没有的话,新建dfa节点再建立边,并把dfa节点加入队列
 				auto&& nfaset = key_iter->second;
-				auto&& find_result = nfa_dfa_map.find(nfaset);
+				auto&& enfaset = EpsilonNFASet(nfaset);
+				auto&& find_result = nfa_dfa_map.find(enfaset);
 				if(find_result == nfa_dfa_map.end())
 				{
-					auto dfa_node = NewOneState();
-					nfa_dfa_map.insert({ nfaset, dfa_node });
-					dfa_nfa_map.insert({ dfa_node, nfaset });
-					if(key_iter->first <= table->range_table->size())
-					{
-						ConnetWith(front, dfa_node, Edge::EdgeType::Char, key_iter->first);
-					}
-					else
-					{
-						ConnetWith(front, dfa_node, Edge::EdgeType::Final);
-					}
+					//新节点
+					dfa_table.emplace_back(vector<int>( edge_sum,-1));
+					dfa_nfa_map.emplace_back(enfaset);
+					auto&& dfa_node = dfa_table.size() - 1;
+					nfa_dfa_map.insert({ enfaset, dfa_node });
+					dfa_table[front][key_iter->first] = dfa_node;
 					dfaqueue.push_back(dfa_node);
-				}
-				else if(key_iter->first <= table->range_table->size())
-				{
-					ConnetWith(front, find_result->second, Edge::EdgeType::Char, key_iter->first);
 				}
 				else
 				{
-					ConnetWith(front, find_result->second, Edge::EdgeType::Final);
+					dfa_table[front][key_iter->first] = find_result->second;
 				}
 			}
 			//清除边的映射
 			edge_nfa_map.clear();
+			dfaqueue.pop_front();
 		}
-
-		//assert(finalset.size() == 1);
-		//auto& dfa_end = *finalset.begin();
-		expression.first = move(dfa_start);
-		expression.second = move(finalset);
-		//expression.second = move(dfa_end);
+		result.dfa = move(dfa_table);
+		result.finalset = move(final_dfa);
+		return move(result);
 	}
 
+	unordered_set<State*> AutoMachine::EpsilonNFASet(State*& target)
+	{
+		unordered_set<State*> result;
+		result.insert(target);
+		deque<State*> queue;
+		queue.emplace_back(target);
+		while(!queue.empty())
+		{
+			State*& front = queue.front();
+
+			for(Edge*& element : front->input)
+			{
+				if(element->type == Edge::EdgeType::Epsilon)
+				{
+					if(result.find(element->target) == result.end())
+					{
+						result.insert(element->target);
+						queue.push_back(element->target);
+					}
+				}
+			}
+			queue.pop_front();
+		}
+		return move(result);
+	}
+	unordered_set<State*> AutoMachine::EpsilonNFASet(unordered_set<State*>& target)
+	{
+		unordered_set<State*> result;
+		for(auto&& Iter : target)
+		{
+			auto&& temp = EpsilonNFASet(const_cast<State*>(Iter));
+			result.insert(temp.begin(), temp.end());
+		}
+		return move(result);
+	}
 	void  AutoMachine::OptimizeSubexpress()
 	{
 		for(auto&& iter = captures->begin(); iter != captures->end(); ++iter)
@@ -469,7 +491,7 @@ namespace ztl
 			auto& subexpress = iter->second;
 			if(CheckPure(subexpress) == true)
 			{
-				NfaToDfa(subexpress);
+				dfa_captures->insert({ iter->first, NfaToDfa(subexpress) });
 			}
 		}
 		for(size_t i = 0; i < this->subexpression->size(); ++i)
@@ -477,7 +499,15 @@ namespace ztl
 			auto&& subexpress = subexpression->at(i);
 			if(CheckPure(subexpress) == true)
 			{
-				NfaToDfa(subexpress);
+				dfa_subexpression->insert({i,NfaToDfa(subexpress)});
+			}
+		}
+		for(size_t i = 0; i < this->anonymity_captures->size(); ++i)
+		{
+			auto&& subexpress        = anonymity_captures->at(i);
+			if(CheckPure(subexpress) == true)
+			{
+				dfa_anonymity_captures->insert({ i, NfaToDfa(subexpress) });
 			}
 		}
 	}

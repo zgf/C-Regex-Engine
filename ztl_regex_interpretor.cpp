@@ -19,7 +19,7 @@ namespace ztl
 		RegexParser parser(lexer);
 		parser.RegexParsing();
 		this->machine = make_shared<AutoMachine>(parser);
-		this->nfa = machine->BuildOptimizeNFA();
+		machine->BuildOptimizeNFA();
 		this->optional = _optional;
 	
 	}
@@ -121,8 +121,8 @@ namespace ztl
 	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, const int start, const int end)
 	{
 		RegexMatchResult result;
-		State* current_state = nfa.first;
-		assert(!nfa.first->output.empty());
+		State* current_state = machine->nfa_expression->first;
+		assert(!machine->nfa_expression->first->output.empty());
 		auto current_input_index = start;
 		size_t current_edge_index = 0;
 		bool enter_next = false;

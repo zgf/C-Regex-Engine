@@ -15,24 +15,30 @@ namespace ztl
 		using StatesType = pair < State*, State* > ;
 		Ptr<Expression>							ast;
 		Ptr<unordered_map<wstring, StatesType>> captures;
+		Ptr<unordered_map<wstring, DFA>>		dfa_captures;
 		Ptr<vector<StatesType>>					anonymity_captures;//匿名捕获组
+		Ptr<unordered_map<int, DFA>>			dfa_anonymity_captures;
+
 		Ptr<vector<StatesType>>					subexpression;//用在几个lookaround上
+		Ptr<unordered_map<int, DFA>>			dfa_subexpression;
+
 		Ptr<CharTable>							table;
 		Ptr<vector<Ptr<State>>>					states;
 		Ptr<vector<Ptr<Edge>>>					edges;
 		unordered_map<wstring, StatesType>		macro_expression;//宏表达式
 		int										capture_count = 0;//捕获组计数
+		Ptr<AutoMachine::StatesType>			nfa_expression;
+		Ptr<DFA>								dfa_expression;
 	public:
 		AutoMachine() = delete;
 		AutoMachine(const Ptr<CharTable>& _table)
-			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), macro_expression()
+			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), anonymity_captures(make_shared<vector<StatesType>>()), dfa_anonymity_captures(make_shared<unordered_map<int, DFA>>()), dfa_captures(make_shared<unordered_map<wstring, DFA>>()), dfa_subexpression(make_shared<unordered_map<int, DFA>>()), nfa_expression(make_shared<AutoMachine::StatesType>()), dfa_expression(nullptr)
 		{
 		}
 		AutoMachine(RegexParser& parser)
-			:table(nullptr), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), ast(nullptr), macro_expression()
+			:table(parser.GetCharTable()), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), anonymity_captures(make_shared<vector<StatesType>>()), ast(parser.GetExpressTree()), dfa_anonymity_captures(make_shared<unordered_map<int, DFA>>()), dfa_captures(make_shared<unordered_map<wstring, DFA>>()), dfa_subexpression(make_shared<unordered_map<int, DFA>>()), nfa_expression(make_shared<AutoMachine::StatesType>()), dfa_expression(nullptr)
+
 		{
-			table = parser.GetCharTable();
-			ast = parser.GetExpressTree();
 		}
 	public:
 
@@ -59,7 +65,7 @@ namespace ztl
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
-		AutoMachine::StatesType BuildOptimizeNFA();
+		void AutoMachine::BuildOptimizeNFA();
 	private:
 		void GetTableIndex(const CharRange& target,vector<int>& range)const;
 		int GetTableIndex(const int& target)const;
@@ -72,8 +78,14 @@ namespace ztl
 		//检查当前子图是不是pure正则的 也就是只有 char e,
 		bool CheckPure(const AutoMachine::StatesType& expression);
 		void DFS(const AutoMachine::StatesType& expression);
+
+		//NFA节点通过null转换可达的节点集合
+		unordered_set<State*> EpsilonNFASet(State*& target);
+
+		unordered_set<State*> EpsilonNFASet(unordered_set<State*>& target);
 		//NFA to DFA
-		void NfaToDfa(AutoMachine::StatesType& expression);
+		DFA AutoMachine::NfaToDfa(AutoMachine::StatesType& expression);
+
 		//查找target的索引
 		int Find(const State*& target);
 		//优化子表达式

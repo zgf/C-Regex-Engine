@@ -222,7 +222,7 @@ namespace ztl
 		RegexParser parser(lexer);
 		parser.RegexParsing();
 		auto&& machine = make_shared<AutoMachine>(parser);
-		auto&& nfa = machine->BuildOptimizeNFA();
+		machine->BuildOptimizeNFA();
 		auto& target = *machine;
 		vector<bool> marks(target.states->size());
 		auto&& state_list = target.states;
@@ -300,8 +300,8 @@ namespace ztl
 				}
 			}
 		};
-		functor(find_functor(nfa.first)
-			, nfa.first);
+		functor(find_functor(machine->nfa_expression->first)
+			, machine->nfa_expression->first);
 		output << "////////////////////////////////////////////////////////////////" << endl;
 	}
 	void TestENFA()
@@ -356,7 +356,7 @@ namespace ztl
 			RegexParser parser(lexer);
 			parser.RegexParsing();
 			auto&& machine = make_shared<AutoMachine>(parser);
-			/*auto&& nfa =*/ machine->BuildOptimizeNFA();
+			 machine->BuildOptimizeNFA();
 		};
 		for(auto&& iter : TestList)
 		{
@@ -369,6 +369,6 @@ namespace ztl
 		TestParserUnCrash();
 		TestParserTree();
 		//TestENFA();
-		//TestOptimize();
+		TestOptimize();
 	}
 }

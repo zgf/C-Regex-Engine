@@ -25,32 +25,32 @@ namespace ztl
 	class GroupIterm
 	{
 	public:
-		int position;
-		int length;
+		int		position;
+		int		length;
 		wstring content;
 	};
 	class RegexMatchResult
 	{
 	public:
 		//整个表达式匹配成功后得到捕获组结果
-		unordered_map<wstring, GroupIterm> group;
+		unordered_map<wstring, GroupIterm>  group;
 		//表达式匹配结果
-		wstring matched;
+		wstring								matched;
 		//匹配在串的位置
-		int start;
-		int end;
-		bool success;
+		int									start;
+		int									end;
+		bool								success;
 	};
 	class SaveState
 	{
 	public:
-		State* states;
-		int    edge_index;
-		int	   input_index;
+		State*states;
+		int		         edge_index;
+		int	             input_index;
 		//当前状态通过当前边消耗的字符长度
-		int	   length;
-		bool meet_final;
-		SaveState() = default;
+		int	             length;
+		bool             meet_final;
+		SaveState()      = default;
 		SaveState(State* _state, int edge, int input) :states(_state), edge_index(edge), input_index(input)
 		{
 		}
@@ -58,12 +58,11 @@ namespace ztl
 	class RegexInterpretor
 	{
 	public:
-		wstring pattern;
-		Ptr<vector<RegexControl>> optional;
-		Ptr<AutoMachine> machine;
-		pair<State*, State*> nfa;
-		vector<SaveState> state_stack;
-		vector<int>		   char_table;
+		wstring						pattern;
+		Ptr<vector<RegexControl>>   optional;
+		Ptr<AutoMachine>			machine;
+		vector<SaveState>			state_stack;
+		vector<int>					char_table;
 	public:
 		using ActionType = unordered_map < Edge::EdgeType, function<int(const wstring& input, const int begin, const int end, int& index, const State* current_state, const Edge* current_edge, RegexInterpretor& interpretor, RegexMatchResult& result)> > ;
 	private:

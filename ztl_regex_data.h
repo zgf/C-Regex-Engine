@@ -143,7 +143,7 @@ namespace ztl
 	{
 	public:
 		Ptr<vector<CharRange>> range_table;//字母范围表
-		Ptr<vector<int>> char_table;//总的字母表
+		Ptr<vector<unsigned short>> char_table;//总的字母表
 	};
 	class State;
 	class Edge
@@ -334,5 +334,12 @@ namespace ztl
 	public:
 		vector<Edge*> input;
 		vector<Edge*> output;
+	};
+
+	class DFA
+	{
+	public:
+		vector<vector<int>> dfa;
+		vector<int>			finalset;
 	};
 }

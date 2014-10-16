@@ -65,7 +65,7 @@ namespace ztl
 		RegexParser(const RegexLex& lexer, const Ptr<vector<RegexControl>>& _optional);
 		~RegexParser() = default;
 		void RegexParsing();
-		Ptr<vector<int>> CreatWCharTable(const Ptr<vector<CharRange>>& table);
+		Ptr<vector<unsigned short>> CreatWCharTable(const Ptr<vector<CharRange>>& table);
 		Ptr<Expression> GetExpressTree()const
 		{
 			return expression;
