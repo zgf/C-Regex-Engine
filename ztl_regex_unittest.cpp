@@ -75,7 +75,7 @@ namespace ztl
 
 		//后向引用
 		assert(ExpectEq(L"(<one>ee)\\k<one>", { TokenType::CaptureBegin, TokenType::Named, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::BackReference, TokenType::Named }));
-		assert(ExpectEq(L"(ee)\\1", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::BackReference, TokenType::Number }));
+		assert(ExpectEq(L"(ee)\\1", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::AnonymityBackReference, TokenType::Number }));
 	}
 	void TestParserUnCrash()
 	{
@@ -103,7 +103,7 @@ namespace ztl
 		ExpectUnCrash(L"a+");
 		ExpectUnCrash(L"a?");
 		ExpectUnCrash(L"a??");
-		
+
 		//捕获组
 		ExpectUnCrash(L"(avs)");
 		ExpectUnCrash(L"(<one>a)");
@@ -127,7 +127,6 @@ namespace ztl
 		ExpectUnCrash(L"(aa)\\1");
 		ExpectUnCrash(L"(<one>aa)\\k<one>");
 
-
 		//零宽断言
 		ExpectUnCrash(L"(?<=aa)");
 		ExpectUnCrash(L"(?<!aa)");
@@ -140,7 +139,6 @@ namespace ztl
 
 		//选择
 		ExpectUnCrash(L"^(?<!aa)|(as[ad\\.]c(a|b(?<=aa)))");
-
 	}
 
 	string ws2s(const wstring& ws)
@@ -161,7 +159,7 @@ namespace ztl
 
 		return result;
 	}
-	
+
 	void TestParserTree()
 	{
 		auto TestCase = [](const wstring input, RegexParseTreeWriter&& expect)
@@ -175,47 +173,44 @@ namespace ztl
 			return result;
 		};
 		assert(TestCase(L"a", One(L'a')));
-		assert(TestCase(L"abc", One(L'a')+(One(L'b')+One(L'c'))));
-		
-		assert(TestCase(L"a{1,}", One(L'a').LoopCreator(1,-1,true)));
-		assert(TestCase(L"(<one>a)", Capture(L"one",One(L'a'))));
-		assert(TestCase(L"(aa)", Capture(L"1", One(L'a')+One('a'))));
+		assert(TestCase(L"abc", One(L'a') + (One(L'b') + One(L'c'))));
+
+		assert(TestCase(L"a{1,}", One(L'a').LoopCreator(1, -1, true)));
+		assert(TestCase(L"(<one>a)", Capture(L"one", One(L'a'))));
+		assert(TestCase(L"(aa)", Capture(L"", One(L'a') + One('a'))));
 
 		assert(TestCase(L"(?:abc)", NoneCapture(One(L'a') + (One(L'b') + One(L'c')))));
-		assert(TestCase(L"[^a-g]c", CharSetCreator(true, { { 'a', 'a' }, {'b','b'}, { 'c', 'c' }, { 'd', 'f' }, { 'g', 'g' } }) + One('c')));
-		auto name_expression = Capture(L"1",One('a'));
-		assert(TestCase(L"(a)\\1", name_expression + BackReference(L"1")));
+		assert(TestCase(L"[^a-g]c", CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }, { 'd', 'f' }, { 'g', 'g' } }) + One('c')));
+		auto name_expression = Capture(L"", One('a'));
+		assert(TestCase(L"(a)\\1", name_expression + AnonymityBackReference(1)));
 		auto named_expression = Capture(L"one", One('a'));
 
 		assert(TestCase(L"(<one>a)\\k<one>", named_expression + BackReference(L"one")));
-		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, {'9','9'} })));
+		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, { '9', '9' } })));
 		assert(TestCase(L"\\w", CharSetw()));
 		assert(TestCase(L"\\W", CharSetW()));
-		assert(TestCase(L".", CharSetCreator(false, { { 0, 0 }, { 1, 65534 }, { 65535, 65535 } })));
+		assert(TestCase(L".", CharSetCreator(true, { { L'\n', L'\n' } })));
 		//所以\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
 
 		assert(TestCase(L"\\b", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetW())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetw()))));
 		assert(TestCase(L"\\B", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetw())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetW()))));
 
 		//串首尾
-		assert(TestCase(L"(a)$", Capture(L"1",One('a'))+StringTail()));
+		assert(TestCase(L"(a)$", Capture(L"", One('a')) + StringTail()));
 		auto aa = One('a') + One('a');
 		//零宽断言
-		assert(TestCase(L"^(?<!aa)", StringHead()+NegativeLookbehind(aa)));
+		assert(TestCase(L"^(?<!aa)", StringHead() + NegativeLookbehind(aa)));
 		assert(TestCase(L"^(?<=aa)", StringHead() + PositiveLookbehind(aa)));
 		assert(TestCase(L"^(?!aa)", StringHead() + NegativeLookahead(aa)));
 		assert(TestCase(L"^(?=aa)", StringHead() + PositivetiveLookahead(aa)));
 		////选择
 		////|a(?<=aa)
-		assert(TestCase(L"(?<!av)|(zh[^a-c]{3,4}(a|f(?<=sy)))", NegativeLookbehind(One('a') + One('v')) | Capture(L"1",
+		assert(TestCase(L"(?<!av)|(zh[^a-c]{3,4}(a|f(?<=sy)))", NegativeLookbehind(One('a') + One('v')) | Capture(L"",
 			One('z') + (One('h') + (
-			CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' } 
-	}).LoopCreator(3, 4, true) +
-			Capture(L"2", One('a') | 
+			CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }
+			}).LoopCreator(3, 4, true) +
+			Capture(L"", One('a') |
 			(One('f') + PositiveLookbehind(One('s') + One('y')))))))));
-	
-		
-
 	}
 	void PrintENFA(ofstream& output, unordered_map<int, std::string>& signmap, const wstring& input)
 	{
@@ -234,7 +229,6 @@ namespace ztl
 		function<void(int current, const State* element)> functor;
 		auto find_functor = [&state_list](State* target)->int
 		{
-			
 			for(size_t index = 0; index < state_list->size(); index++)
 			{
 				auto&& may_target = state_list->at(index).get();
@@ -242,25 +236,23 @@ namespace ztl
 				{
 					return index;
 				}
-
 			}
 			throw std::exception("can't find target!");
 		};
-		functor = [&functor, &output, &find_functor, &machine,&marks, &signmap, &state_list](int current, const State* element)
+		functor = [&functor, &output, &find_functor, &machine, &marks, &signmap, &state_list](int current, const State* element)
 		{
 			if(marks[current] == false)
 			{
 				marks[current] = true;
 				//	wcout << "Current Node Address:" <<element << endl;
-				
+
 				for(auto&& iter : element->output)
 				{
-				/*	output << "		Edge Type:";
-					output << signmap[(int)(iter->type)].c_str() << endl;*/
+					/*	output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;*/
 					//wcout << "	Edge Target Node Address:" << iter->target << endl;
-					
-					
-					if((int)(iter->type) == 1 || (int)(iter->type) ==2)
+
+					if((int)(iter->type) == 1 || (int)(iter->type) == 2)
 					{
 						output << "Current Node index:" << current << endl;
 						output << "		Edge Type:";
@@ -272,7 +264,6 @@ namespace ztl
 
 						functor(subindex, captures[name].first);
 						output << " Subexpression End" << endl;
-
 					}
 					else if((int)(iter->type) == 3)
 					{
@@ -299,7 +290,6 @@ namespace ztl
 						auto subindex = find_functor(subexpression[loop_index].first);
 						functor(subindex, subexpression[loop_index].first);
 						output << " Subexpression End" << endl;
-
 					}
 					output << "Current Node index:" << current << endl;
 					output << "		Edge Type:";
@@ -351,11 +341,11 @@ namespace ztl
 			L"a(?:ab|ds)dd",
 			L"a",
 			L"ab",
-			L"a|b", 
+			L"a|b",
 			L"(<one>a)\\k<one>",
-			L"(as(ad|bc)|fd)", 
+			L"(as(ad|bc)|fd)",
 			L"$(?<=aa)", L"^(?=aa)",
-			L"(?<!av)", L"zh[^a-c]", 
+			L"(?<!av)", L"zh[^a-c]",
 			L"a|f(?<=sy)",
 			L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))",
 		};
@@ -366,20 +356,18 @@ namespace ztl
 			RegexParser parser(lexer);
 			parser.RegexParsing();
 			auto&& machine = make_shared<AutoMachine>(parser);
-			auto&& nfa = machine->BuildOptimizeNFA();
+			/*auto&& nfa =*/ machine->BuildOptimizeNFA();
 		};
-		for (auto&& iter: TestList)
+		for(auto&& iter : TestList)
 		{
 			TestCase(iter);
 		}
-
-
 	}
 	void TestAllComponent()
 	{
 		TestLexer();
 		TestParserUnCrash();
-		//TestParserTree();
+		TestParserTree();
 		//TestENFA();
 		//TestOptimize();
 	}

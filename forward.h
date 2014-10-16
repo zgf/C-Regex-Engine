@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <numeric>  
+#include <numeric>
 #include <fstream>
 #include "boost/any.hpp"
 #include <locale>

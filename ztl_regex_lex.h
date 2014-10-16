@@ -8,7 +8,7 @@ namespace ztl
 	class RegexLex
 	{
 	private:
-		using ActionType = unordered_map < wstring, function<void(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)> >;
+		using ActionType = unordered_map < wstring, function<void(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)> > ;
 	private:
 		static ActionType action_map;
 		wstring pattern;
@@ -25,7 +25,6 @@ namespace ztl
 		~RegexLex() = default;
 		void ParsingPattern()
 		{
-
 			tokens = ParsingPattern(0, pattern.size());
 		}
 		Ptr<vector<RegexToken>> ParsingPattern(int start_index, int end_index);
@@ -79,7 +78,7 @@ namespace ztl
 		//解析 默认捕获组
 		static void ParseCapture(const TokenType type, const int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens);
 		// 预定义字符集合
-		static void SetPreDefineCharSet(TokenType type,int& index, Ptr<vector<RegexToken>>& tokens)
+		static void SetPreDefineCharSet(TokenType type, int& index, Ptr<vector<RegexToken>>& tokens)
 		{
 			tokens->emplace_back(RegexToken(type));
 			index += 2;

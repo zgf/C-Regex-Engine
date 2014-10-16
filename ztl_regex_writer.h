@@ -3,7 +3,6 @@
 //手写正则表达式语法树 用来测试
 namespace ztl
 {
-
 	class RegexParseTreeWriter
 	{
 	public:
@@ -12,10 +11,9 @@ namespace ztl
 		RegexParseTreeWriter() = default;
 		RegexParseTreeWriter(const Ptr<Expression>& target) :expression(target)
 		{
-
 		}
 	public:
-		friend RegexParseTreeWriter operator+(const RegexParseTreeWriter& left, const RegexParseTreeWriter& right) 
+		friend RegexParseTreeWriter operator+(const RegexParseTreeWriter& left, const RegexParseTreeWriter& right)
 		{
 			return make_shared<SequenceExpression>(left.expression, right.expression);
 		}
@@ -28,7 +26,7 @@ namespace ztl
 			return make_shared<LoopExpression>(expression, min, max, greedy);
 		}
 	};
-	RegexParseTreeWriter CharSetCreator(bool reverse,const vector<CharRange>&range )
+	RegexParseTreeWriter CharSetCreator(bool reverse, const vector<CharRange>&range)
 	{
 		return make_shared<CharSetExpression>(reverse, range);
 	}
@@ -62,15 +60,20 @@ namespace ztl
 	}
 	RegexParseTreeWriter Capture(const wstring name, const RegexParseTreeWriter& expression)
 	{
-		return make_shared<CaptureExpression>(name,expression.expression);
+		return make_shared<CaptureExpression>(name, expression.expression);
 	}
+	
 	RegexParseTreeWriter NoneCapture(const RegexParseTreeWriter& expression)
 	{
-		return make_shared<NoneCaptureExpression>( expression.expression);
+		return make_shared<NoneCaptureExpression>(expression.expression);
 	}
 	RegexParseTreeWriter BackReference(const wstring name)
 	{
 		return make_shared<BackReferenceExpression>(name);
+	}
+	RegexParseTreeWriter AnonymityBackReference(const int index)
+	{
+		return make_shared<AnonymityBackReferenceExpression>(index);
 	}
 	RegexParseTreeWriter StringTail()
 	{

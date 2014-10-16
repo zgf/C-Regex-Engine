@@ -15,7 +15,6 @@ PositiveLookbehindExpression
 NegativeLookaheadExpression
 PositivetiveLookaheadExpression
 
-
 Functions:
 ParseRegexExpression            ：将字符串分析为RegexExpression对象，如果语法有问题则抛异常
 Look Around
@@ -141,7 +140,7 @@ CharSetD,
 CharSetd,
 PositionB,
 Positionb,
-MatchAllSymbol,
+GeneralMatch,
 Component,
 CaptureBegin,
 CaptureEnd,
@@ -172,4 +171,26 @@ wstring到string的转换问题 std::exception不支持wstring字符串 低优先级.
 parser的动作表和first表应该改为static的.每次都要构造开销太大
 finalset 不应该是set集合,应该只有一个
 unro set的hash没详细考虑
+*/
+/*
+高层设计:
+引擎分为
+Lexer
+Parser
+AutoMachine
+Interpreter
+几个部分
+Lexer读取 pattern string和vector control
+生成vector<RegexToken> tokens;
+
+parser读取tokens 生成表达式树 expression 和字符表table;
+
+automachine 读取expression 和table
+生成NFA 和DFA capture subexpression
+
+Interpreter
+读取 NFA DFA capture subexpression
+
+产生匹配结果
+
 */

@@ -24,9 +24,9 @@ namespace ztl
 
 		virtual void Apply(IRegexAlogrithm& algorithm) = 0;
 		bool IsEqual(Ptr<Expression>& target);
-		Ptr<vector<CharRange>> GetCharSetTable();
+		Ptr<vector<CharRange>> GetCharSetTable(const Ptr<vector<RegexControl>>& optional);
 		void SetTreeCharSetOrthogonal(Ptr<CharTable>& target);
-		pair<State*,State*> BuildNFA(AutoMachine* target);
+		pair<State*, State*> BuildNFA(AutoMachine* target);
 	private:
 		void BuildOrthogonal(Ptr<vector<int>>&target);
 	};
@@ -47,7 +47,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 	//普通字符
 	class NormalCharExpression : public Expression
@@ -64,7 +63,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 
 	//循环
@@ -86,7 +84,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 
 	class SequenceExpression : public Expression
@@ -102,9 +99,8 @@ namespace ztl
 		~SequenceExpression()
 		{
 		}
-	
-		void Apply(IRegexAlogrithm& algorithm);
 
+		void Apply(IRegexAlogrithm& algorithm);
 	};
 
 	class AlternationExpression : public Expression
@@ -122,7 +118,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 
 	class BeginExpression : public Expression
@@ -134,7 +129,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-		
 	};
 
 	class EndExpression : public Expression
@@ -146,7 +140,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 
 	class CaptureExpression : public Expression
@@ -164,7 +157,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 
 	class MacroExpression : public Expression
@@ -182,7 +174,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 	class MacroReferenceExpression : public Expression
 	{
@@ -214,8 +205,8 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
+	//命名后向引用
 	class BackReferenceExpression : public Expression
 	{
 	public:
@@ -232,7 +223,23 @@ namespace ztl
 		}
 		void Apply(IRegexAlogrithm& algorithm);
 	};
+	class AnonymityBackReferenceExpression : public Expression
+	{
+	public:
+		int index;
+	public:
+		AnonymityBackReferenceExpression() = default;
 
+		AnonymityBackReferenceExpression(const int& _index) :index(_index)
+		{
+		}
+
+		~AnonymityBackReferenceExpression()
+		{
+		}
+		void Apply(IRegexAlogrithm& algorithm);
+	};
+	
 	class NegativeLookbehindExpression : public Expression
 	{
 	public:
@@ -246,7 +253,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 	class PositiveLookbehindExpression : public Expression
 	{
@@ -261,7 +267,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 	class NegativeLookaheadExpression : public Expression
 	{
@@ -276,7 +281,6 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
 	class PositivetiveLookaheadExpression : public Expression
 	{
@@ -291,8 +295,5 @@ namespace ztl
 		{
 		}
 		void Apply(IRegexAlogrithm& algorithm);
-
 	};
-
-	
 }

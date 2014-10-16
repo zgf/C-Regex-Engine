@@ -21,6 +21,8 @@ namespace ztl
 		virtual void Visitor(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
 		virtual void Visitor(Ptr<MacroExpression>& expression) = 0;
 		virtual void Visitor(Ptr<MacroReferenceExpression>& expression) = 0;
+		virtual void Visitor(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
+
 	};
 	template<typename ReturnType, typename ParameterType>
 	class RegexAlogrithm : public IRegexAlogrithm
@@ -52,6 +54,8 @@ namespace ztl
 		virtual ReturnType Apply(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<MacroExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<MacroReferenceExpression>& expression) = 0;
+		virtual ReturnType Apply(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
+
 
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
@@ -118,6 +122,10 @@ namespace ztl
 		{
 			return_value = Apply(expression);
 		}
+		void Visitor(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+			return_value = Apply(expression);
+		}
 	};
 	//特化空返回类型
 	template<typename ParameterType>
@@ -148,6 +156,8 @@ namespace ztl
 		virtual void Apply(Ptr<PositivetiveLookaheadExpression>& expression) = 0;
 		virtual void Apply(Ptr<MacroExpression>& expression) = 0;
 		virtual void Apply(Ptr<MacroReferenceExpression>& expression) = 0;
+		virtual void Apply(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
+
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
 		{
@@ -210,6 +220,10 @@ namespace ztl
 			Apply(expression);
 		}
 		void Visitor(Ptr<MacroReferenceExpression>& expression)
+		{
+			Apply(expression);
+		}
+		void Visitor(Ptr<AnonymityBackReferenceExpression>& expression)
 		{
 			Apply(expression);
 		}
@@ -344,6 +358,18 @@ namespace ztl
 			}
 			return false;
 		}
+		bool Apply(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+			auto expect = dynamic_pointer_cast<AnonymityBackReferenceExpression>(argument);
+			if(expect != nullptr)
+			{
+				if(expect->index == expression->index)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 		bool Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
 			auto expect = dynamic_pointer_cast<NegativeLookbehindExpression>(argument);
@@ -387,7 +413,6 @@ namespace ztl
 			if(expect != nullptr&&expect->name != expression->name)
 			{
 				return  true;
-			
 			}
 			return false;
 		}
@@ -416,7 +441,7 @@ namespace ztl
 		{
 			for(auto&& Iter : expression->range)
 			{
-				if (Iter.max == Iter.min)
+				if(Iter.max == Iter.min)
 				{
 					this->argument->emplace_back(Iter.min);
 				}
@@ -437,7 +462,7 @@ namespace ztl
 		}
 		void Apply(Ptr<SequenceExpression>& expression)
 		{
-			this->Invoke(expression->left,this->argument);
+			this->Invoke(expression->left, this->argument);
 			this->Invoke(expression->right, this->argument);
 		}
 		void Apply(Ptr<AlternationExpression>& expression)
@@ -447,7 +472,6 @@ namespace ztl
 		}
 		void Apply(Ptr<BeginExpression>& expression)
 		{
-
 		}
 		void Apply(Ptr<EndExpression>& expression)
 		{
@@ -463,20 +487,20 @@ namespace ztl
 		void Apply(Ptr<BackReferenceExpression>& expression)
 		{
 		}
+		void Apply(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+		}
 		void Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<PositiveLookbehindExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<NegativeLookaheadExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<PositivetiveLookaheadExpression>& expression)
 		{
@@ -485,7 +509,6 @@ namespace ztl
 		void Apply(Ptr<MacroExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
-
 		}
 		void Apply(Ptr<MacroReferenceExpression>& expression)
 		{
@@ -499,11 +522,11 @@ namespace ztl
 		{
 			vector<CharRange> result;
 			auto& range = expression->range;
-			for (auto&& iter : range)
+			for(auto&& iter : range)
 			{
 				auto&& min_index = this->argument->char_table->at(iter.min);
 				auto&& max_index = this->argument->char_table->at(iter.max);
-				for(auto i = max_index; i <= max_index;i++)
+				for(auto i = min_index; i <= max_index; i++)
 				{
 					result.emplace_back(this->argument->range_table->at(i));
 				}
@@ -512,7 +535,6 @@ namespace ztl
 		}
 		void Apply(Ptr<NormalCharExpression>& expression)
 		{
-
 		}
 		void Apply(Ptr<LoopExpression>& expression)
 		{
@@ -530,7 +552,6 @@ namespace ztl
 		}
 		void Apply(Ptr<BeginExpression>& expression)
 		{
-
 		}
 		void Apply(Ptr<EndExpression>& expression)
 		{
@@ -544,6 +565,9 @@ namespace ztl
 			this->Invoke(expression->expression, this->argument);
 		}
 		void Apply(Ptr<BackReferenceExpression>& expression)
+		{
+		}
+		void Apply(Ptr<AnonymityBackReferenceExpression>& expression)
 		{
 		}
 		void Apply(Ptr<NegativeLookbehindExpression>& expression)
@@ -571,7 +595,7 @@ namespace ztl
 		}
 	};
 	/*
-	功能边种类 
+	功能边种类
 	Char	消耗字符
 	Loop //消耗字符
 	Capture //消耗字符
@@ -581,86 +605,89 @@ namespace ztl
 	Begin
 	End
 	*/
-	class BuildNFAAlgorithm : public RegexAlogrithm <AutoMachine::StatesType, AutoMachine* >
+	class BuildNFAAlgorithm : public RegexAlogrithm < AutoMachine::StatesType, AutoMachine* >
 	{
 	public:
-		pair<State*,State*> Apply(Ptr<CharSetExpression>& expression)
+		pair<State*, State*> Apply(Ptr<CharSetExpression>& expression)
 		{
-			return this->argument->NewCharSetStates(expression->reverse,expression->range);
+			return this->argument->NewCharSetStates(expression->reverse, expression->range);
 		}
-		pair<State*,State*> Apply(Ptr<NormalCharExpression>& expression)
+		pair<State*, State*> Apply(Ptr<NormalCharExpression>& expression)
 		{
 			return this->argument->NewCharStates(expression->range);
 		}
-		pair<State*,State*> Apply(Ptr<LoopExpression>& expression)
+		pair<State*, State*> Apply(Ptr<LoopExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewLoopStates(substates,expression->greedy, expression->begin, expression->end);
+			return this->argument->NewLoopStates(substates, expression->greedy, expression->begin, expression->end);
 		}
-		pair<State*,State*> Apply(Ptr<SequenceExpression>& expression)
+		pair<State*, State*> Apply(Ptr<SequenceExpression>& expression)
 		{
 			auto&& left = this->Invoke(expression->left, this->argument);
 			auto&& right = this->Invoke(expression->right, this->argument);
 			return this->argument->NewSequenceStates(left, right);
 		}
-		pair<State*,State*> Apply(Ptr<AlternationExpression>& expression)
+		pair<State*, State*> Apply(Ptr<AlternationExpression>& expression)
 		{
 			auto&& left = this->Invoke(expression->left, this->argument);
 			auto&& right = this->Invoke(expression->right, this->argument);
 			return this->argument->NewAlterStates(left, right);
 		}
-		pair<State*,State*> Apply(Ptr<BeginExpression>& expression)
+		pair<State*, State*> Apply(Ptr<BeginExpression>& expression)
 		{
 			return this->argument->NewBeinAndEndStates(Edge::EdgeType::Head);
 		}
-		pair<State*,State*> Apply(Ptr<EndExpression>& expression)
+		pair<State*, State*> Apply(Ptr<EndExpression>& expression)
 		{
 			return this->argument->NewBeinAndEndStates(Edge::EdgeType::Tail);
 		}
-		pair<State*,State*> Apply(Ptr<CaptureExpression>& expression)
+		pair<State*, State*> Apply(Ptr<CaptureExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewCaptureStates(substates,expression->name); 
+			return this->argument->NewCaptureStates(substates, expression->name);
 		}
-		pair<State*,State*> Apply(Ptr<NoneCaptureExpression>& expression)
+		pair<State*, State*> Apply(Ptr<NoneCaptureExpression>& expression)
 		{
 			return this->Invoke(expression->expression, this->argument);
 		}
-		pair<State*,State*> Apply(Ptr<BackReferenceExpression>& expression)
+		pair<State*, State*> Apply(Ptr<BackReferenceExpression>& expression)
 		{
 			return this->argument->NewBackReferenceStates(expression->name);
 		}
-		pair<State*,State*> Apply(Ptr<NegativeLookbehindExpression>& expression)
+		pair<State*, State*> Apply(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+			return this->argument->NewAnonymityBackReferenceBackReferenceStates(expression->index);
+		}
+		pair<State*, State*> Apply(Ptr<NegativeLookbehindExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
 			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookbehind);
 		}
-		pair<State*,State*> Apply(Ptr<PositiveLookbehindExpression>& expression)
+		pair<State*, State*> Apply(Ptr<PositiveLookbehindExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
 			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositiveLookbehind);
-
 		}
-		pair<State*,State*> Apply(Ptr<NegativeLookaheadExpression>& expression)
+		pair<State*, State*> Apply(Ptr<NegativeLookaheadExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
 			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::NegativeLookahead);
-			
 		}
-		pair<State*,State*> Apply(Ptr<PositivetiveLookaheadExpression>& expression)
+		pair<State*, State*> Apply(Ptr<PositivetiveLookaheadExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
 			return this->argument->NewLookAroundStates(substates, Edge::EdgeType::PositivetiveLookahead);
 		}
 		pair<State*, State*> Apply(Ptr<MacroReferenceExpression>& expression)
-		{//BUG
-			return this->argument->NewBackReferenceStates(expression->name);
+		{
+			return this->argument->NewMacroReferenceStates(expression->name);
 		}
 		pair<State*, State*> Apply(Ptr<MacroExpression>& expression)
-		{//BUG
+		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewCaptureStates(substates, expression->name);
+			return this->argument->NewRegexMacroStates(expression->name,substates);
 		}
+	
 	};
 	void Expression::BuildOrthogonal(Ptr<vector<int>>& target)
 	{
@@ -675,28 +702,45 @@ namespace ztl
 	{
 		return IsEqualAlgorithm().Invoke(shared_from_this(), target);
 	}
-	Ptr<vector<CharRange>> Expression::GetCharSetTable()
+	Ptr<vector<CharRange>> Expression::GetCharSetTable(const Ptr<vector<RegexControl>>& optional)
 	{
 		auto&&  result(make_shared<vector<CharRange>>());
 		auto&& charset = make_shared<vector<int>>();
 		BuildOrthogonal(charset);
 		charset->push_back(0);
 		charset->emplace_back(65535);
+	
 		sort(charset->begin(), charset->end());
-		charset->erase(unique(charset->begin(), charset->end()),charset->end());
-
-		for(size_t i = 0; i < charset->size() - 1;i++)
+		charset->erase(unique(charset->begin(), charset->end()), charset->end());
+		if(find(optional->begin(), optional->end(), RegexControl::IgnoreCase) != optional->end())
+		{
+			auto&& length = charset->size();
+			for(size_t i = 0; i<length; ++i)
+			{
+				auto&& char_iter = (*charset)[i];
+				if (char_iter <='z'&& char_iter>='a')
+				{
+					charset->emplace_back(char_iter - 32);
+				}
+				else if(char_iter <= 'Z' && char_iter >= 'A')
+				{
+					charset->emplace_back(char_iter + 32);
+				}
+			}
+			sort(charset->begin(), charset->end());
+		}
+		for(size_t i = 0; i < charset->size() - 1; i++)
 		{
 			auto&& left = charset->at(i);
-			auto&& right = charset->at(i+1);
+			auto&& right = charset->at(i + 1);
 			result->emplace_back(CharRange(left, left));
-			if (right - left >= 2)
+			if(right - left >= 2)
 			{
-				result->emplace_back(CharRange(left+1, right-1));
+				result->emplace_back(CharRange(left + 1, right - 1));
 			}
 		}
 		result->emplace_back(CharRange(65535, 65535));
- 		return move(result);
+		return move(result);
 	}
 	void Expression::SetTreeCharSetOrthogonal(Ptr<CharTable>& target)
 	{
@@ -765,5 +809,9 @@ namespace ztl
 	void MacroReferenceExpression::Apply(IRegexAlogrithm& algorithm)
 	{
 		algorithm.Visitor(dynamic_pointer_cast<MacroReferenceExpression>(shared_from_this()));
+	};
+	void AnonymityBackReferenceExpression::Apply(IRegexAlogrithm& algorithm)
+	{
+		algorithm.Visitor(dynamic_pointer_cast<AnonymityBackReferenceExpression>(shared_from_this()));
 	};
 }

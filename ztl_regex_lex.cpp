@@ -43,7 +43,7 @@ namespace ztl
 			index += 1;
 			if(RegexLex::IsNumber(pattern[index]))
 			{
-				tokens->emplace_back(RegexToken(TokenType::BackReference));
+				tokens->emplace_back(RegexToken(TokenType::AnonymityBackReference));
 				GetNumber(pattern, index, tokens);
 			}
 			else
@@ -202,7 +202,6 @@ namespace ztl
 			auto index_begin = result + 1;
 			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens);
 
-
 			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 			index = index_end + 1;
 		} });
@@ -219,7 +218,6 @@ namespace ztl
 
 			auto index_begin = result + 1;
 			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens);
-
 
 			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 			index = index_end + 1;
@@ -265,11 +263,9 @@ namespace ztl
 		//Í¨Åä·û
 		action_map.insert({ L".", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-
 			if(find(optional->begin(), optional->end(), RegexControl::Singleline) != optional->end())
 			{
 				tokens->emplace_back(RegexToken(TokenType::MatchAllSymbol));
-
 			}
 			else
 			{
@@ -430,13 +426,12 @@ namespace ztl
 		index = index_end + 1;
 	}
 
-	 void RegexLex::ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)
+	void RegexLex::ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)
 	{
 		tokens->emplace_back(RegexToken(begin_type));
 		auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
 		auto index_begin = index + offset;
 		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens);
-
 
 		index = index_end + 1;
 		tokens->emplace_back(RegexToken(end_type));

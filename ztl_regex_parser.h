@@ -14,7 +14,7 @@ Unit  = Express Unit | Express
 Express = Factor Loop | Factor
 Loop = ¡°LoopBegin¡± |"ChoseLoop" | "ChoseLoopGreedy" | "PositiveLoop" | "PositiveLoopGreedy" | "KleeneLoop" | "KleeneLoopGreedy";
 
-Factor	
+Factor
 = ¡°CaptureBegin¡±  CaptureRight
 = "RegexMacro"	 CaptureRight
 = "NoneCapture"           Alert	"CaptureEnd"
@@ -32,6 +32,7 @@ Factor
 = "MatchAllSymbol"
 = "GeneralMatch"
 = "MacroReference"
+= "AnonymityBackReference"
 CaptureRight = "Named"  Alert "CaptureEnd" |Alert  "CaptureEnd"
 */
 /*
@@ -43,27 +44,25 @@ CaptureRight = "Named"  Alert "CaptureEnd" |Alert  "CaptureEnd"
 */
 namespace ztl
 {
-	
 	class RegexParser
 	{
-		using FirstMapType = unordered_map<TokenType, Ptr<unordered_set<TokenType>>>;
-		using ActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)> >;
-		using LoopActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index)> >;
+		using FirstMapType = unordered_map < TokenType, Ptr<unordered_set<TokenType>> > ;
+		using ActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)> > ;
+		using LoopActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index)> > ;
 	private:
 		static FirstMapType first_map;
-		Ptr<vector<RegexToken>> tokens;
-		Ptr<Expression>			expression;
 		static ActionType actions;
 		static LoopActionType loop_actions;
-		Ptr<CharTable> char_table;
-		Ptr<vector<RegexControl>> optional;
+		
+		Ptr<vector<RegexToken>>		tokens;
+		Ptr<Expression>				expression;
+		Ptr<CharTable>				char_table;
+		Ptr<vector<RegexControl>>	optional;
 		wstring pattern;
 	public:
 		RegexParser() = delete;
-		RegexParser(const RegexLex& lexer)
-			:tokens(lexer.GetTokens()), pattern(lexer.GetRawString()), expression(nullptr), char_table(make_shared<CharTable>())
-		{
-		}
+		RegexParser(const RegexLex& lexer);
+		RegexParser(const RegexLex& lexer, const Ptr<vector<RegexControl>>& _optional);
 		~RegexParser() = default;
 		void RegexParsing();
 		Ptr<vector<int>> CreatWCharTable(const Ptr<vector<CharRange>>& table);
@@ -83,8 +82,9 @@ namespace ztl
 		static 	int GetChar(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
 		static Ptr<Expression> CharSet(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const bool reverse, int& index);
 		static Ptr<Expression>  BackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
+		static Ptr<Expression>  AnonymityBackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
 
-		static Ptr<Expression> CaptureBegin(const wstring& pattern,const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression> CaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
 		static Ptr<Expression> LookBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index);
 		static Ptr<Expression> NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
 		static LoopActionType InitLoopActionMap();
@@ -95,9 +95,7 @@ namespace ztl
 		static Ptr<Expression> Factor(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
 		static Ptr<Expression> Express(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
 
-
-		static Ptr<Expression> CaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens,int& index, const int end_index);
+		static Ptr<Expression> CaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
 		static wstring Named(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
-		
 	};
 }

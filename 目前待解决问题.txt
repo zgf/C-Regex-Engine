@@ -12,21 +12,39 @@
 		LineEnd,
 		2个词法部分完成
 		2个语法分析部分完成
+		直接在语法分析时转换为零宽断言,该功能实现完成
 		//通配符,匹配非\n
 		GeneralMatch,
 		//匹配所有字符
 		MatchAllSymbol,
+		直接在语法分析时实现为不同的normalchar,该功能实现完成
 		2个语法分析完成
 2. optional的实现
 
-ExplicitCapture,//不匿名捕获
-IgnoreCase,//大小写不敏感的匹配 修改字母表
-Multiline,// $^ 匹配行结尾和开头
-RightToLeft,//
-Singleline,//.匹配所有字符
+ExplicitCapture,//不匿名捕获 词法分析时 "("分情况讨论
+IgnoreCase,//大小写不敏感的匹配 修改字母表的部分,最后在匹配时做判断
+Multiline,// $^ 匹配行结尾和开头 修改成零宽断言搞定
+RightToLeft,// 匹配时处理
+Singleline,//.匹配所有字符 修改为不同的charset搞定
 OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 
 3.修改Loop * + ? 
 4. 修改DFA生成算法直接生成表 并且考虑E匹配
-5.
+5.automachine 修改支持宏功能, expression修改支持宏功能
+宏不影响automachine以后的内容,在aumachine构造NFA中,宏引用全部被替换掉
+宏本身被替换为空串
+
+*/
+/*
+目前问题:
+1.对于IgnoreCase 需要在interpretor运行时处理. 这块还未完成
+2.对于ExplicitCapture, 单元测试还未写
+3.Multiline 单元测试未写
+4.Singleline 单元测试未写
+5.RegexMacro和refer还没写automachine的NFA构造时的处理 已完成
+6.DFA生成算法还未修改
+7.Loop的*+?还未修改 已修改
+8.状态机代码太乱,待修改
+9.在automachine添加对匿名捕获组的处理 已添加,
+10.添加对匿名后向引用和命名后向引用的处理 匿名后向引用已添加
 */
