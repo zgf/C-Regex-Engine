@@ -12,21 +12,18 @@ namespace ztl
 		}
 	}
 	RegexInterpretor::RegexInterpretor(const wstring& pattern, const Ptr<vector<RegexControl>>_optional)
-	:char_table(65535)
+		:optional(_optional)
+
 	{
-		RegexLex lexer(pattern);
+		RegexLex lexer(pattern, optional);
 		lexer.ParsingPattern();
-		RegexParser parser(lexer);
+		RegexParser parser(lexer, optional);
 		parser.RegexParsing();
 		this->machine = make_shared<AutoMachine>(parser);
 		machine->BuildOptimizeNFA();
-		this->optional = _optional;
 	
 	}
-	void RegexInterpretor::InitTable()
-	{
 	
-	}
 	RegexInterpretor::ActionType RegexInterpretor::InitActions()
 	{
 		RegexInterpretor::ActionType actions;
@@ -108,88 +105,110 @@ namespace ztl
 		return move(actions);
 	}
 
-	RegexMatchResult MatchFail()
+	RegexMatchResult RegexInterpretor::MatchSucced()
+	{
+		return {};
+	}
+
+	RegexMatchResult RegexInterpretor::MatchFailed()
 	{
 		RegexMatchResult result;
 		result.success = false;
 		return move(result);
 	}
-
-	//状态机这块代码太乱了- -
-
-	//为了贪婪匹配 边需要重排序,final放到最后.遇到final后,直接跳出
-	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, const int start, const int end)
-	{
-		RegexMatchResult result;
-		State* current_state = machine->nfa_expression->first;
-		assert(!machine->nfa_expression->first->output.empty());
-		auto current_input_index = start;
-		size_t current_edge_index = 0;
-		bool enter_next = false;
-		while(current_input_index != end)
-		{
-			//先保存当前状态
-			this->state_stack.emplace_back(SaveState(current_state, 0, current_input_index));
-			auto stack_index = state_stack.size() - 1;
-			for(current_edge_index = 0; current_edge_index < current_state->output.size();)
-			{
-				Edge* current_edge = current_state->output[current_edge_index];
-				if(current_edge->type != Edge::EdgeType::Final)
-				{
-					auto&& new_input_index = RegexInterpretor::actions[current_edge->type]
-						(input, start, end, current_input_index, current_state, current_edge, *this, result);
-					if(new_input_index != -1)
-					{
-						//进入下一个状态
-						state_stack.back().length = new_input_index - current_input_index;
-						current_state = current_state->output[current_edge_index]->target;
-						enter_next = true;
-						current_input_index = new_input_index;
-						break;
-					}
-					else
-					{
-						state_stack[stack_index].edge_index++;
-						current_edge_index++;
-					}
-				}
-				else
-				{
-					state_stack[stack_index].meet_final = true;
-				}
-			}
-
-			if(enter_next == true)
-			{
-				enter_next = false;
 	
-			}//边全部执行完了并失败或者遇到过final.
-			else if(state_stack[stack_index].meet_final == true)
+	void RegexInterpretor::DFAMatch(const DFA& dfa,const wstring& input, const int start)
+	{
+		auto& table = dfa.dfa;
+		auto& finalset = dfa.finalset;
+		auto& save_state = this->state_stack.back();
+		auto final_index = machine->table->range_table->size();
+		//从0开始
+		auto current_state_index = 0;
+		auto current_input_index = start;
+		while(find(finalset.begin(),finalset.end(),current_state_index)!=finalset.end())
+		{
+			if (table[current_state_index][current_input_index] != -1)
 			{
-				result.success = true;
-				//填充result;
-				return move(result);
+				current_input_index++;
+				current_state_index = table[current_state_index][current_input_index];
+				save_state.length++;
 			}
-			else if(state_stack.size() > 1)
+			else if(table[current_state_index][final_index] != -1)
 			{
-				//弹出当前状态,执行上一状态的下一条边
-				state_stack.pop_back();
-
-				//回退到上一状态
-				current_state = state_stack.back().states;
-				current_edge_index = state_stack.back().edge_index;
-				current_input_index = state_stack.back().input_index;
-				state_stack.pop_back();
+				current_state_index = table[current_state_index][final_index];
 			}
 			else
 			{
-				//如果是空.说明匹配失败,没有状态能匹配
-				return MatchFail();
+				save_state.length = 0;
+				break;
 			}
 		}
-		//跳出了就说明失败了
-		result.success = false;
-		//填充result;
-		return MatchFail();
+	}
+
+	bool MatchEdge(Edge*& edge, const wstring& input, const int current_input_index, SaveState& save)
+	{
+		return {};
+	}
+
+	//边都排序一次,final放最后
+	RegexMatchResult RegexInterpretor::NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start)
+	{
+		RegexMatchResult result;
+		bool is_new_state = true;
+		const auto& finalset = nfa.second;
+		auto current_state = nfa.first;
+		auto current_input_index = start;
+		auto current_edge_index = 0;
+		state_stack.emplace_back(SaveState());
+		while(current_state != nfa.second)
+		{
+		LoopStart:
+			auto& save = state_stack.back();
+			if (is_new_state == true)
+			{//状态是第一次进入
+				save.input_index = current_input_index;
+				save.states = current_state;
+				save.edge_index = -1;
+				save.length = -1;
+				current_edge_index = 0;
+			}
+			else
+			{//状态不是第一次进入
+				current_edge_index = save.edge_index + 1;
+				current_input_index = save.input_index;
+				current_state = save.states;
+				save.length = -1;
+			}
+			
+			for(; current_edge_index < current_state->output.size();current_edge_index++)
+			{
+				save.edge_index = current_edge_index;
+				auto&& match_result = MatchEdge(current_state->output[current_edge_index], input, current_input_index, save);
+				if(match_result == true)
+				{
+					current_state = current_state->output[current_edge_index]->target;
+					state_stack.emplace_back(move(save));
+					state_stack.emplace_back(SaveState());
+					goto LoopStart;
+				}
+			}
+			//所有边都匹配失败
+			//弹出当前状态,执行上一状态的下一条边
+			state_stack.pop_back();
+			if (state_stack.empty())
+			{
+				//所有的都失败了.没有上一状态报告失败
+				break;
+			}
+		}
+
+		if (current_state == nfa.second)
+		{
+			return MatchSucced();
+		}
+
+		return MatchFailed();
+
 	}
 }

@@ -100,12 +100,14 @@ namespace ztl
 	Ptr<vector<unsigned short>> RegexParser::CreatWCharTable(const Ptr<vector<CharRange>>& table)
 	{
 		auto result(make_shared<vector<unsigned short>>(65536));
+		auto current_iter = result->begin();
 		for(size_t i = 0; i < table->size(); i++)
 		{
 			auto&& element = (*table)[i];
 			//fill_type(result->_Myfirst, element.max - element.min + 1, i);
 			auto&& count = element.max - element.min + 1;
-			fill_n(result->begin(), move(count), i);
+			fill_n(current_iter, move(count), i);
+			current_iter += count;
 
 		}
 		return move(result);

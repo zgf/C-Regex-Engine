@@ -47,5 +47,14 @@ OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 8.状态机代码太乱,待修改
 9.在automachine添加对匿名捕获组的处理 已添加,
 10.添加对匿名后向引用和命名后向引用的处理 匿名后向引用已添加
-11. fill_type 待写 白写了- -优不优化没影响
+*/
+
+/*
+1.EpsilonNFAtoNFA 完成
+2.去掉Edge的source成员 完成
+3.去掉State的input成员 完成
+4.优化alert的节点构造,因为没有input而造成的节点增多应该被解决
+5.被DFA匹配的subexpression不用转ENFA
+6.AutoMachine函数太乱,需要重新组织一下
+7.FindReachTargetStateSet待完成
 */

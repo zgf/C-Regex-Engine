@@ -34,6 +34,8 @@ namespace ztl
 	public:
 		//整个表达式匹配成功后得到捕获组结果
 		unordered_map<wstring, GroupIterm>  group;
+		vector<GroupIterm>					anonymity_group;
+
 		//表达式匹配结果
 		wstring								matched;
 		//匹配在串的位置
@@ -44,7 +46,7 @@ namespace ztl
 	class SaveState
 	{
 	public:
-		State*states;
+		State*			 states;
 		int		         edge_index;
 		int	             input_index;
 		//当前状态通过当前边消耗的字符长度
@@ -62,7 +64,6 @@ namespace ztl
 		Ptr<vector<RegexControl>>   optional;
 		Ptr<AutoMachine>			machine;
 		vector<SaveState>			state_stack;
-		vector<int>					char_table;
 	public:
 		using ActionType = unordered_map < Edge::EdgeType, function<int(const wstring& input, const int begin, const int end, int& index, const State* current_state, const Edge* current_edge, RegexInterpretor& interpretor, RegexMatchResult& result)> > ;
 	private:
@@ -86,6 +87,15 @@ namespace ztl
 		RegexMatchResult RegexMatchOne(const wstring& input, const int start, const int end);
 		//在start到end范围内寻找正则的全部匹配
 		vector<RegexMatchResult> RegexMatchAll(const wstring& input, const int start, const int end);
-		void InitTable();
+
+		//DFA 匹配,从start开始,不移动start,看能否到达终结状态
+		//结果保存在save_stack.back()内
+		void DFAMatch(const DFA& dfa,const wstring& input, const int start);
+		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
+		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start);
+		
+		RegexMatchResult MatchSucced();
+		RegexMatchResult MatchFailed();
+
 	};
 }

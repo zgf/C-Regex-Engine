@@ -2,6 +2,23 @@
 #include "ztl_regex_automachine.h"
 namespace ztl
 {
+	AutoMachine::AutoMachine(RegexParser& parser)
+		:table(parser.GetCharTable()),
+		states(make_shared<vector<Ptr<State>>>()),
+		edges(make_shared<vector<Ptr<Edge>>>()),
+		captures(make_shared<unordered_map<wstring, StatesType>>()),
+		subexpression(make_shared<vector<StatesType>>()),
+		anonymity_captures(make_shared<vector<StatesType>>()),
+		ast(parser.GetExpressTree()),
+		dfa_anonymity_captures(make_shared<unordered_map<int, DFA>>()),
+		dfa_captures(make_shared<unordered_map<wstring, DFA>>()),
+		dfa_subexpression(make_shared<unordered_map<int, DFA>>()),
+		nfa_expression(nullptr),
+		dfa_expression(nullptr)
+
+	{
+	}
+
 	void AutoMachine::GetTableIndex(const CharRange& target, vector<int>& range)const
 	{
 		auto&& min_index = (*table->char_table)[target.min];
@@ -20,10 +37,9 @@ namespace ztl
 		auto&& edge = NewEdge();
 		edge->type = type;
 		start->output.push_back(edge);
-		end->input.push_back(edge);
-		edge->srouce = start;
+		//end->input.push_back(edge);
+		//edge->srouce = start;
 		edge->target = end;
-		assert(type != Edge::EdgeType::Epsilon);
 	}
 	void AutoMachine::ConnetWith(StatesType& target, const Edge::EdgeType& type)
 	{
@@ -36,10 +52,9 @@ namespace ztl
 		edge->type = type;
 		edge->userdata = userdata;
 		start->output.push_back(edge);
-		end->input.push_back(edge);
-		edge->srouce = start;
+		//end->input.push_back(edge);
+		//edge->srouce = start;
 		edge->target = end;
-		assert(type != Edge::EdgeType::Epsilon);
 	}
 	void AutoMachine::ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata)
 	{
@@ -110,39 +125,25 @@ namespace ztl
 	}
 	AutoMachine::StatesType AutoMachine::NewAlterStates(StatesType& left, StatesType& right)
 	{
-		assert(left.first->input.empty());
-		assert(right.first->input.empty());
+		//assert(left.first->input.empty());
+		//assert(right.first->input.empty());
 		assert(left.second->output.empty());
 		assert(right.second->output.empty());
 		auto&& result = NewStates();
-		/*ConnetWith(result.first,left.first);
+		ConnetWith(result.first, left.first);
 		ConnetWith(result.first, right.first);
 		ConnetWith(left.second,result.second);
-		ConnetWith(right.second,result.second);*/
-		result.first->output = left.first->output;
-		//left.first->input empty 所以left节点的output的值可以随便修改,因为没有其他节点可达left.
-		result.first->output.insert(result.first->output.end(), right.first->output.begin(), right.first->output.end());
-		//修改输出边的源节点
-		for(auto&& edge : result.first->output)
-		{
-			edge->srouce = result.first;
-		}
-		result.second->input = left.second->input;
-		result.second->input.insert(result.second->input.end(), right.second->input.begin(), right.second->input.end());
-		//修改输入边到新节点
-		for(auto&& edge : result.second->input)
-		{
-			edge->target = result.second;
-		}
+		ConnetWith(right.second,result.second);
+	
 
 		return move(result);
 	}
 	AutoMachine::StatesType AutoMachine::NewSequenceStates(StatesType& left, StatesType& right)
 	{
-		//ConnetWith(left.second, right.first);
-		assert(left.second->output.empty());
-		assert(right.first->input.empty());
-		left.second->output = right.first->output;
+		ConnetWith(left.second, right.first);
+		//assert(left.second->output.empty());
+		//assert(right.first->input.empty());
+		//left.second->output = right.first->output;
 		return { left.first, right.second };
 	}
 
@@ -241,19 +242,22 @@ namespace ztl
 	}
 	void AutoMachine::BuildOptimizeNFA()
 	{
-		*nfa_expression = ast->BuildNFA(this);
+		nfa_expression = make_shared<AutoMachine::StatesType>(EpsilonNFAtoNFA(ast->BuildNFA(this)));
 		//优化子表达式, DFA化
 		OptimizeSubexpress();
 
 		if(CheckPure(*nfa_expression) == true)
 		{
-		dfa_expression = make_shared<DFA>();
-		*dfa_expression = this->NfaToDfa(*nfa_expression);
+			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
 		}
 	}
 }
 namespace ztl
 {
+	unordered_set<State*> AutoMachine::FindReachTargetStateSet(State* start, State* target)
+	{
+
+	}
 	AutoMachine::StatesType AutoMachine::NewIsomorphicGraph(StatesType& target)
 	{
 		//旧图到新图节点的映射
@@ -274,16 +278,19 @@ namespace ztl
 					sign.insert({ current_edge->target, new_node });
 					queue.emplace_back(current_edge->target);
 				}
+
 				auto&& new_dege = NewEdge();
 				new_dege->type = current_edge->type;
 				new_dege->userdata = current_edge->userdata;
 				new_dege->target = sign[current_edge->target];
-				new_dege->srouce = sign[front];
+				//new_dege->srouce = sign[front];
+
 				sign[front]->output.emplace_back(new_dege);
-				sign[current_edge->target]->input.emplace_back(new_dege);
+				//sign[current_edge->target]->input.emplace_back(new_dege);
 			}
 			queue.pop_front();
 		}
+
 		return { sign[target.first], sign[target.second] };
 	}
 
@@ -428,7 +435,7 @@ namespace ztl
 				if(find_result == nfa_dfa_map.end())
 				{
 					//新节点
-					dfa_table.emplace_back(vector<int>( edge_sum,-1));
+					dfa_table.emplace_back(vector<int>(edge_sum, -1));
 					dfa_nfa_map.emplace_back(enfaset);
 					auto&& dfa_node = dfa_table.size() - 1;
 					nfa_dfa_map.insert({ enfaset, dfa_node });
@@ -459,7 +466,7 @@ namespace ztl
 		{
 			State*& front = queue.front();
 
-			for(Edge*& element : front->input)
+			for(Edge*& element : front->output)
 			{
 				if(element->type == Edge::EdgeType::Epsilon)
 				{
@@ -489,26 +496,97 @@ namespace ztl
 		for(auto&& iter = captures->begin(); iter != captures->end(); ++iter)
 		{
 			auto& subexpress = iter->second;
+			subexpress = EpsilonNFAtoNFA(subexpress);
+
 			if(CheckPure(subexpress) == true)
 			{
 				dfa_captures->insert({ iter->first, NfaToDfa(subexpress) });
 			}
+			
 		}
 		for(size_t i = 0; i < this->subexpression->size(); ++i)
 		{
 			auto&& subexpress = subexpression->at(i);
+			subexpress = EpsilonNFAtoNFA(subexpress);
+
 			if(CheckPure(subexpress) == true)
 			{
-				dfa_subexpression->insert({i,NfaToDfa(subexpress)});
+				dfa_subexpression->insert({ i, NfaToDfa(subexpress) });
 			}
+			
 		}
 		for(size_t i = 0; i < this->anonymity_captures->size(); ++i)
 		{
-			auto&& subexpress        = anonymity_captures->at(i);
+			auto&& subexpress = anonymity_captures->at(i);
+			subexpress = EpsilonNFAtoNFA(subexpress);
 			if(CheckPure(subexpress) == true)
 			{
 				dfa_anonymity_captures->insert({ i, NfaToDfa(subexpress) });
 			}
+			
 		}
+	}
+
+	//从ENFA到普通NFA
+	AutoMachine::StatesType AutoMachine::EpsilonNFAtoNFA(const AutoMachine::StatesType& target)
+	{
+		//从旧状态到新状态的映射
+		unordered_map<State*, State*> state_map;
+		//状态映射,还未处理的状态队列
+		deque<State*> queue;
+		//待处理边表
+		vector<Edge*> edge_queue;
+		queue.emplace_back(target.first);
+		while(!queue.empty())
+		{
+			auto& front = queue.front();
+			auto&& enfaset = EpsilonNFASet(front);
+			//enfaset加入映射表
+			for(auto& element : enfaset)
+			{
+				state_map.insert({ element, front });
+			}
+			//enfaset的每一条边非空边交给front,front的空边删除
+			vector<Edge*> new_front_output;
+			for(auto& element : enfaset)
+			{
+				for(auto&& edge : element->output)
+				{
+					if(edge->type != Edge::EdgeType::Epsilon)
+					{
+						new_front_output.emplace_back(edge);
+					}
+				}
+			}
+			front->output = move(new_front_output);
+			//处理enfaset的每一条边
+
+			for(auto&& edge : front->output)
+			{
+				if(edge->type != Edge::EdgeType::Epsilon)
+				{
+					if(state_map.find(edge->target) != state_map.end())
+					{
+						edge->target = state_map[edge->target];
+					}
+					else
+					{
+						//新的未处理过的节点
+						queue.emplace_back(edge->target);
+						edge_queue.emplace_back(edge);
+					}
+				}
+			}
+
+			queue.pop_front();
+		}
+
+		for(auto&& edge : edge_queue)
+		{
+			assert(state_map.find(edge->target) != state_map.end());
+			edge->target = state_map[edge->target];
+		}
+		//新的开始和结束节点
+		return { state_map[target.first], state_map[target.second] };
 	}
 }

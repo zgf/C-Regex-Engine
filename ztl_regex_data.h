@@ -188,35 +188,11 @@ namespace ztl
 			{
 				return !this->operator==(target);
 			}
-			bool operator<(const LoopUserData& right)
-			{
-				if(index == right.index)
-				{
-					if(greedy == right.greedy)
-					{
-						if(begin == right.begin)
-						{
-							return end < right.end;
-						}
-						else
-						{
-							return begin < right.begin;
-						}
-					}
-					else
-					{
-						return greedy < right.greedy;
-					}
-				}
-				else
-				{
-					return index < right.index;
-				}
-			}
+		
 		};
 	public:
 		EdgeType type;
-		State* srouce = 0;
+		//State* srouce = 0;
 		State* target = 0;
 		any userdata;
 		/*
@@ -239,100 +215,13 @@ namespace ztl
 		NameSubexprssion
 		这里是name.
 		*/
-	public:
-		bool operator==(const Edge& right)
-		{
-			if(type == right.type && srouce == right.srouce&& target == right.target)
-			{
-				return CompareUserData(right.userdata);
-			}
-			else
-			{
-				return false;
-			}
-		}
-		bool CompareEqualUserData(const any& right)
-		{
-			if(type == Edge::EdgeType::BackReference || type == Edge::EdgeType::Capture)
-			{
-				return any_cast<wstring>(userdata) == any_cast<wstring>(right);
-			}
-			else if(type == Edge::EdgeType::Loop)
-			{
-				return any_cast<Edge::LoopUserData>(userdata) == any_cast<Edge::LoopUserData>(right);
-			}
-			else if(type == EdgeType::NegativeLookahead || type == EdgeType::NegativeLookbehind || type == EdgeType::PositivetiveLookahead || type == EdgeType::PositiveLookbehind || type == EdgeType::Char)
-			{
-				return any_cast<int>(userdata) == any_cast<int>(right);
-			}
-			else
-			{
-				return true;
-			}
-		}
-		bool CompareLessUserData(const any& right)
-		{
-			if(type == Edge::EdgeType::BackReference || type == Edge::EdgeType::Capture)
-			{
-				return any_cast<wstring>(userdata) < any_cast<wstring>(right);
-			}
-			else if(type == Edge::EdgeType::Loop)
-			{
-				return any_cast<Edge::LoopUserData>(userdata) < any_cast<Edge::LoopUserData>(right);
-			}
-			else if(type == EdgeType::NegativeLookahead || type == EdgeType::NegativeLookbehind || type == EdgeType::PositivetiveLookahead || type == EdgeType::PositiveLookbehind || type == EdgeType::Char)
-			{
-				return any_cast<int>(userdata) < any_cast<int>(right);
-			}
-			else
-			{
-				//undef==undef
-				return false;
-			}
-		}
-		bool CompareUserData(const any& right)
-		{
-			if(type == Edge::EdgeType::BackReference || type == Edge::EdgeType::Capture)
-			{
-				return any_cast<wstring>(userdata) == any_cast<wstring>(right);
-			}
-			else if(type == Edge::EdgeType::Loop)
-			{
-				return any_cast<Edge::LoopUserData>(userdata) == any_cast<Edge::LoopUserData>(right);
-			}
-			else if(type == EdgeType::NegativeLookahead || type == EdgeType::NegativeLookbehind || type == EdgeType::PositivetiveLookahead || type == EdgeType::PositiveLookbehind || type == EdgeType::Char)
-			{
-				return any_cast<int>(userdata) == any_cast<int>(right);
-			}
-			else
-			{
-				//undef==undef
-				return false;
-			}
-		}
-		bool operator!=(const Edge& right)
-		{
-			return !this->operator==(right);
-		}
-		//相同类型,相同userdata的放一起.
-		bool operator<(const Edge& right)
-		{
-			if(type == right.type)
-			{
-				return CompareLessUserData(right.userdata);
-			}
-			else
-			{
-				return type < right.type;
-			}
-		}
 	};
 
 	//状态
 	class State
 	{
 	public:
-		vector<Edge*> input;
+		//vector<Edge*> input;
 		vector<Edge*> output;
 	};
 

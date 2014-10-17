@@ -31,15 +31,7 @@ namespace ztl
 		Ptr<DFA>								dfa_expression;
 	public:
 		AutoMachine() = delete;
-		AutoMachine(const Ptr<CharTable>& _table)
-			:table(_table), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), anonymity_captures(make_shared<vector<StatesType>>()), dfa_anonymity_captures(make_shared<unordered_map<int, DFA>>()), dfa_captures(make_shared<unordered_map<wstring, DFA>>()), dfa_subexpression(make_shared<unordered_map<int, DFA>>()), nfa_expression(make_shared<AutoMachine::StatesType>()), dfa_expression(nullptr)
-		{
-		}
-		AutoMachine(RegexParser& parser)
-			:table(parser.GetCharTable()), states(make_shared<vector<Ptr<State>>>()), edges(make_shared<vector<Ptr<Edge>>>()), captures(make_shared<unordered_map<wstring, StatesType>>()), subexpression(make_shared<vector<StatesType>>()), anonymity_captures(make_shared<vector<StatesType>>()), ast(parser.GetExpressTree()), dfa_anonymity_captures(make_shared<unordered_map<int, DFA>>()), dfa_captures(make_shared<unordered_map<wstring, DFA>>()), dfa_subexpression(make_shared<unordered_map<int, DFA>>()), nfa_expression(make_shared<AutoMachine::StatesType>()), dfa_expression(nullptr)
-
-		{
-		}
+		AutoMachine(RegexParser& parser);
 	public:
 
 		AutoMachine::StatesType NewEpsilonStates();
@@ -59,13 +51,14 @@ namespace ztl
 
 		//创建同构图
 		AutoMachine::StatesType NewIsomorphicGraph(StatesType& target);
-
-
+		//搜索可到达Target节点的节点集合
+		unordered_set<State*> FindReachTargetStateSet(State* start,State* target);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
 		void AutoMachine::BuildOptimizeNFA();
+		AutoMachine::StatesType EpsilonNFAtoNFA(const AutoMachine::StatesType& target);
 	private:
 		void GetTableIndex(const CharRange& target,vector<int>& range)const;
 		int GetTableIndex(const int& target)const;

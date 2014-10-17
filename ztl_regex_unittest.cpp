@@ -251,7 +251,14 @@ namespace ztl
 					/*	output << "		Edge Type:";
 						output << signmap[(int)(iter->type)].c_str() << endl;*/
 					//wcout << "	Edge Target Node Address:" << iter->target << endl;
-
+					/*if((int)(iter->type) == 0)
+					{
+						output << "Current Node index:" << current << endl;
+						output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;
+						auto subindex = find_functor(iter->target);
+						functor(subindex, iter->target);
+					}*/
 					if((int)(iter->type) == 1 || (int)(iter->type) == 2)
 					{
 						output << "Current Node index:" << current << endl;
@@ -291,6 +298,19 @@ namespace ztl
 						functor(subindex, subexpression[loop_index].first);
 						output << " Subexpression End" << endl;
 					}
+					else if((int)(iter->type) == 12 || (int)(iter->type) == 13)
+					{
+						output << "Current Node index:" << current << endl;
+						output << "		Edge Type:";
+						output << signmap[(int)(iter->type)].c_str() << endl;
+						auto name = any_cast<int>(iter->userdata)-1;
+						auto& captures = *machine->anonymity_captures;
+						auto subindex = find_functor(captures[name].first);
+						output << "Find Subexpression:" << endl;
+
+						functor(subindex, captures[name].first);
+						output << " Subexpression End" << endl;
+					}
 					output << "Current Node index:" << current << endl;
 					output << "		Edge Type:";
 					output << signmap[(int)(iter->type)].c_str() << endl;
@@ -298,6 +318,7 @@ namespace ztl
 					output << "		Edge Target Node Index:" << index << endl;
 					functor(index, iter->target);
 				}
+				
 			}
 		};
 		functor(find_functor(machine->nfa_expression->first)
@@ -320,6 +341,8 @@ namespace ztl
 		signmap.insert({ 9, "PositiveLookbehind" });
 		signmap.insert({ 10, "NegativeLookbehind" });
 		signmap.insert({ 11, "Final" }); //边后面是终结状态
+		signmap.insert({ 12, "AnonymityCapture" }); 
+		signmap.insert({ 12, "AnonymityBackReference" });
 		PrintENFA(output, signmap, L"a");
 		PrintENFA(output, signmap, L"ab");
 		PrintENFA(output, signmap, L"a|a");
@@ -332,13 +355,14 @@ namespace ztl
 		PrintENFA(output, signmap, L"(?<!av)");
 		PrintENFA(output, signmap, L"zh[^a-c]");
 		PrintENFA(output, signmap, L"a|f(?<=sy)");
+		PrintENFA(output, signmap, L"zh[^a-c]{3,4}(a|f(?<=sy))");
 		PrintENFA(output, signmap, L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))");
 		output.close();
 	}
 	void TestOptimize()
 	{
 		vector<wstring> TestList = {
-			L"a(?:ab|ds)dd",
+			
 			L"a",
 			L"ab",
 			L"a|b",
@@ -347,6 +371,7 @@ namespace ztl
 			L"$(?<=aa)", L"^(?=aa)",
 			L"(?<!av)", L"zh[^a-c]",
 			L"a|f(?<=sy)",
+			L"a(?:ab|ds)dd",
 			L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))",
 		};
 		auto TestCase = [](wstring input)
@@ -368,7 +393,7 @@ namespace ztl
 		TestLexer();
 		TestParserUnCrash();
 		TestParserTree();
-		//TestENFA();
-		TestOptimize();
+		TestENFA();
+	//	TestOptimize();
 	}
 }
