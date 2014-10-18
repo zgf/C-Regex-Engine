@@ -127,8 +127,9 @@ namespace ztl
 	{
 		//assert(left.first->input.empty());
 		//assert(right.first->input.empty());
-		assert(left.second->output.empty());
-		assert(right.second->output.empty());
+		//因为现在节点可能终结节点指回开始节点的情况,所以这里的断言不再需要
+		/*assert(left.second->output.empty());
+		assert(right.second->output.empty());*/
 		auto&& result = NewStates();
 		ConnetWith(result.first, left.first);
 		ConnetWith(result.first, right.first);
@@ -205,8 +206,11 @@ namespace ztl
 		//修改对于 *+?的贪婪匹配,直接扩展开来
 		if(greedy == true && begin == 0 && end == 1)
 		{
-			ConnetWith(substates);
-			return substates;
+			auto&& new_state = NewStates();
+			ConnetWith(new_state);
+			ConnetWith(new_state.first, substates.first);
+			ConnetWith(substates.second, new_state.second);
+			return new_state;
 		}
 		else if(greedy == true && begin == 0 && end == -1)
 		{
@@ -221,6 +225,23 @@ namespace ztl
 			ConnetWith(substates.second, substates.first);
 			return substates;
 		}
+		else if(greedy == true && begin == end)
+		{
+			assert(begin != 0);
+			vector<AutoMachine::StatesType> result(begin);
+			result[0] = substates;
+			for(auto i = 1; i < result.size(); i++)
+			{
+				result[i] = this->NewIsomorphicGraph(substates);
+			}
+			for(auto i = 0; i < result.size() - 1; i++)
+			{
+				auto&& left = result[i];
+				auto&& right = result[i + 1];
+				ConnetWith(left.second, right.first);
+			}
+			return { result[0].first, result.back().second };
+		}
 		else
 		{
 			auto&& result = NewStates();
@@ -229,6 +250,7 @@ namespace ztl
 			return move(result);
 		}
 	}
+
 	int AutoMachine::GetSubexpressionIndex(const StatesType& substates)
 	{
 		this->subexpression->emplace_back(substates);
@@ -242,7 +264,7 @@ namespace ztl
 	}
 	void AutoMachine::BuildOptimizeNFA()
 	{
-		nfa_expression = make_shared<AutoMachine::StatesType>(EpsilonNFAtoNFA(ast->BuildNFA(this)));
+		nfa_expression = make_shared<AutoMachine::StatesType>(ast->BuildNFA(this));
 		//优化子表达式, DFA化
 		OptimizeSubexpress();
 
@@ -250,19 +272,45 @@ namespace ztl
 		{
 			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
 		}
+		else
+		{
+			*nfa_expression = EpsilonNFAtoNFA(*nfa_expression);
+		}
 	}
 }
 namespace ztl
 {
 	unordered_set<State*> AutoMachine::FindReachTargetStateSet(State* start, State* target)
 	{
+		unordered_set<State*> result;
+		unordered_set<State*> marks;
+		function<void(State* element)> functor;
+		functor = [this, &functor, &target, &result, &marks](State* element)
+		{
+			if(marks.find(element) == marks.end())
+			{
+				marks.insert(element);
 
+				for(auto&& iter : element->output)
+				{
+					if (iter->target == target)
+					{
+						result.insert(element);
+					}
+					functor(iter->target);
+				}
+			}
+		};
+		functor(start);
+		//肯定查看到了尾部
+		return result;
 	}
 	AutoMachine::StatesType AutoMachine::NewIsomorphicGraph(StatesType& target)
 	{
 		//旧图到新图节点的映射
 		unordered_map<State*, State*> sign;
 		deque<State*> queue;
+		sign.insert({ target.first, NewOneState() });
 		queue.emplace_back(target.first);
 		while(!queue.empty())
 		{
@@ -276,16 +324,16 @@ namespace ztl
 					//说明新节点第一次发现
 					auto&& new_node = NewOneState();
 					sign.insert({ current_edge->target, new_node });
-					queue.emplace_back(current_edge->target);
+					queue.push_back(current_edge->target);
 				}
 
-				auto&& new_dege = NewEdge();
+				/*Edge* new_dege = NewEdge();
 				new_dege->type = current_edge->type;
 				new_dege->userdata = current_edge->userdata;
-				new_dege->target = sign[current_edge->target];
+				new_dege->target = sign[current_edge->target];*/
 				//new_dege->srouce = sign[front];
-
-				sign[front]->output.emplace_back(new_dege);
+				ConnetWith(sign[front], sign[current_edge->target], current_edge->type, current_edge->userdata);
+				//sign[front]->output.push_back(new_dege);
 				//sign[current_edge->target]->input.emplace_back(new_dege);
 			}
 			queue.pop_front();
@@ -384,19 +432,21 @@ namespace ztl
 		//待处理的dfa队列
 		deque<int> dfaqueue;
 
-		vector<int> final_dfa;
+		int final_dfa = -1;
 		//	//不同值的边到NFA状态集合的映射
 		unordered_map<int, unordered_set<State*>> edge_nfa_map;
 		dfa_table.emplace_back(vector<int>(edge_sum, -1));
 		dfa_nfa_map.emplace_back(EpsilonNFASet(expression.first));
 		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });
+		//初始化队列
+		dfaqueue.emplace_back(0);
 		while(!dfaqueue.empty())
 		{
 			auto&& front = dfaqueue.front();
 			//assert(find(dfa_nfa_map.begin(),dfa_nfa_map.end(),front) != dfa_nfa_map.end());
 			if(dfa_nfa_map[front].find(expression.second) != dfa_nfa_map[front].end())
 			{
-				final_dfa.emplace_back(front);
+				final_dfa = front;
 			}
 
 			//收集边到nfa集合的映射
@@ -451,12 +501,13 @@ namespace ztl
 			edge_nfa_map.clear();
 			dfaqueue.pop_front();
 		}
+		//assert(final_dfa.size() == 1);
 		result.dfa = move(dfa_table);
-		result.finalset = move(final_dfa);
+		result.finalset = final_dfa;
 		return move(result);
 	}
 
-	unordered_set<State*> AutoMachine::EpsilonNFASet(State*& target)
+	unordered_set<State*> AutoMachine::EpsilonNFASet(State* target)
 	{
 		unordered_set<State*> result;
 		result.insert(target);
@@ -470,7 +521,7 @@ namespace ztl
 			{
 				if(element->type == Edge::EdgeType::Epsilon)
 				{
-					if(result.find(element->target) == result.end())
+					if(find(result.begin(), result.end(),element->target) == result.end())
 					{
 						result.insert(element->target);
 						queue.push_back(element->target);
@@ -479,34 +530,34 @@ namespace ztl
 			}
 			queue.pop_front();
 		}
-		return move(result);
+		return result ;
 	}
 	unordered_set<State*> AutoMachine::EpsilonNFASet(unordered_set<State*>& target)
 	{
 		unordered_set<State*> result;
 		for(auto&& Iter : target)
 		{
-			auto&& temp = EpsilonNFASet(const_cast<State*>(Iter));
+			auto&& temp = EpsilonNFASet(Iter);
 			result.insert(temp.begin(), temp.end());
 		}
-		return move(result);
+		return result;
 	}
 	void  AutoMachine::OptimizeSubexpress()
 	{
 		for(auto&& iter = captures->begin(); iter != captures->end(); ++iter)
 		{
 			auto& subexpress = iter->second;
+			subexpress = NewFinalStates(subexpress);
 			subexpress = EpsilonNFAtoNFA(subexpress);
-
 			if(CheckPure(subexpress) == true)
 			{
 				dfa_captures->insert({ iter->first, NfaToDfa(subexpress) });
 			}
-			
 		}
 		for(size_t i = 0; i < this->subexpression->size(); ++i)
 		{
 			auto&& subexpress = subexpression->at(i);
+			subexpress = NewFinalStates(subexpress);
 			subexpress = EpsilonNFAtoNFA(subexpress);
 
 			if(CheckPure(subexpress) == true)
@@ -518,6 +569,7 @@ namespace ztl
 		for(size_t i = 0; i < this->anonymity_captures->size(); ++i)
 		{
 			auto&& subexpress = anonymity_captures->at(i);
+			subexpress = NewFinalStates(subexpress);
 			subexpress = EpsilonNFAtoNFA(subexpress);
 			if(CheckPure(subexpress) == true)
 			{

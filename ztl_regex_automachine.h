@@ -48,9 +48,11 @@ namespace ztl
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
-
 		//创建同构图
 		AutoMachine::StatesType NewIsomorphicGraph(StatesType& target);
+
+		//添加Final并且创建DFA
+		void AddFinalAndCreatDFA(AutoMachine::StatesType& subexpress);
 		//搜索可到达Target节点的节点集合
 		unordered_set<State*> FindReachTargetStateSet(State* start,State* target);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
@@ -73,7 +75,7 @@ namespace ztl
 		void DFS(const AutoMachine::StatesType& expression);
 
 		//NFA节点通过null转换可达的节点集合
-		unordered_set<State*> EpsilonNFASet(State*& target);
+		unordered_set<State*> EpsilonNFASet(State* target);
 
 		unordered_set<State*> EpsilonNFASet(unordered_set<State*>& target);
 		//NFA to DFA

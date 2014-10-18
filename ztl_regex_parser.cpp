@@ -214,17 +214,39 @@ namespace ztl
 		index += 1;
 		return make_shared<AnonymityBackReferenceExpression>(number);
 	}
-
+	//进来时已经去掉了最外层的(括号,找到匹配的最外层的)括号
+	int FindTheLongestCaptureEnd(const Ptr<vector<RegexToken>>& tokens,const int index)
+	{
+		int count = 1;
+		for(auto i = index; i < tokens->size(); i++)
+		{
+			auto& type = (*tokens)[i].type;
+			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin||type == TokenType::NoneCapture)
+			{
+				count++;
+			}
+			else if(type == TokenType::CaptureEnd)
+			{
+				count--;
+			}
+			if(count == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 	Ptr<Expression> RegexParser::NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		auto end_index = index;
-		auto current_type = tokens->at(end_index).type;
+		//auto end_index = index;
+		/*auto current_type = tokens->at(end_index).type;
 		while(current_type != TokenType::CaptureEnd)
 		{
 			end_index++;
 			current_type = tokens->at(end_index).type;
-		}
+		}*/
+		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 		auto&& exp = Alter(pattern, tokens, index, end_index);
 		auto&& result = make_shared<NoneCaptureExpression>(exp);
 		index += 1;
@@ -233,13 +255,14 @@ namespace ztl
 	Ptr<Expression> RegexParser::RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		auto end_index = index;
+		/*auto end_index = index;
 		auto current_type = tokens->at(end_index).type;
 		while(current_type != TokenType::CaptureEnd)
 		{
 			end_index++;
 			current_type = tokens->at(end_index).type;
-		}
+		}*/
+		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
 		wstring name = Named(pattern, tokens, index);
 		if(tokens->at(index).type != TokenType::Named)
@@ -426,13 +449,15 @@ namespace ztl
 	Ptr<Expression> RegexParser::CaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		auto end_index = index;
+		/*auto end_index = index;
 		auto current_type = tokens->at(end_index).type;
 		while(current_type != TokenType::CaptureEnd)
 		{
 			end_index++;
 			current_type = tokens->at(end_index).type;
-		}
+		}*/
+		auto end_index = FindTheLongestCaptureEnd(tokens, index);
+
 		auto&& result = CaptureRight(pattern, tokens, index, end_index);
 		index += 1;
 		return move(result);

@@ -1,6 +1,8 @@
 #pragma once
 #include "forward.h"
 #include "ztl_regex_automachine.h"
+#define private public
+
 /*
 设计:
 //加个预处理阶段
@@ -41,7 +43,7 @@ namespace ztl
 		//匹配在串的位置
 		int									start;
 		int									end;
-		bool								success;
+		bool								success=false;
 	};
 	class SaveState
 	{
@@ -90,12 +92,12 @@ namespace ztl
 
 		//DFA 匹配,从start开始,不移动start,看能否到达终结状态
 		//结果保存在save_stack.back()内
-		void DFAMatch(const DFA& dfa,const wstring& input, const int start);
-		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
-		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start);
+		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const int start,const int end);
+			//NFA 匹配,从start开始,不移动start,看能否到达终结状态
+		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start,const int end);
 		
 		RegexMatchResult MatchSucced();
 		RegexMatchResult MatchFailed();
-
+		int GetWCharIndex(const wchar_t character)const;
 	};
 }

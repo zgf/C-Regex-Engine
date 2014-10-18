@@ -41,7 +41,7 @@ namespace ztl
 			return pattern;
 		}
 	private:
-		static void CreatNewParsePattern(const wstring& pattern, int start, int end, Ptr<vector<RegexToken>>& tokens);
+		static void CreatNewParsePattern(const wstring& pattern, int start, int end, Ptr<vector<RegexToken>>& tokens,const Ptr<vector<RegexControl>>& optional);
 		static bool IsNumber(const wchar_t character)
 		{
 			return character >= 48 && character <= 57;
@@ -76,7 +76,7 @@ namespace ztl
 		static int GetLongestMatched(const wchar_t matched_begin, const wchar_t matched_end, const wstring& pattern, size_t start_index);
 
 		//解析 默认捕获组
-		static void ParseCapture(const TokenType type, const int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens);
+		static void ParseCapture(const TokenType type, const int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional);
 		// 预定义字符集合
 		static void SetPreDefineCharSet(TokenType type, int& index, Ptr<vector<RegexToken>>& tokens)
 		{
@@ -95,7 +95,7 @@ namespace ztl
 		顺序否定环视，表示所在位置右侧不能匹配Expression
 		*/
 
-		static void ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens);
+		static void ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens,const Ptr<vector<RegexControl>>& optional);
 	public:
 		static RegexLex::ActionType RegexLex::InitActionMap();
 	};

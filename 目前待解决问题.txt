@@ -53,8 +53,17 @@ OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 1.EpsilonNFAtoNFA 完成
 2.去掉Edge的source成员 完成
 3.去掉State的input成员 完成
-4.优化alert的节点构造,因为没有input而造成的节点增多应该被解决
-5.被DFA匹配的subexpression不用转ENFA
-6.AutoMachine函数太乱,需要重新组织一下
-7.FindReachTargetStateSet待完成
+4.优化alert的节点构造,因为没有input而造成的节点增多应该被解决 解决
+5.被DFA匹配的subexpression不用转ENFA 已解决
+6.AutoMachine函数太乱,需要重新组织一下 
+7.FindReachTargetStateSet待完成 已完成
+8.所有的dfa添加final节点,这样dfa不需要vector的finalset了 已修改
+9.更好的错误提示
+10.RI需要修改权限
+11.打印DFA辅助调试
+12.?选择Loop的DFA化问题 已解决 外面套一层节点再连接E就OK了
+13.parser 括号的嵌套bug ((3)-(3)) 已解决
+14. ENFAtoNFA EpsilonNFASet的性能极低- -待改进
+15.对于循环 {3} {5}这种,用DFA方式 完成
+16.添加大量DFA的测试 完成
 */

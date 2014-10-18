@@ -229,6 +229,6 @@ namespace ztl
 	{
 	public:
 		vector<vector<int>> dfa;
-		vector<int>			finalset;
+		int					finalset;
 	};
 }
