@@ -63,7 +63,7 @@ OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 11.打印DFA辅助调试
 12.?选择Loop的DFA化问题 已解决 外面套一层节点再连接E就OK了
 13.parser 括号的嵌套bug ((3)-(3)) 已解决
-14. ENFAtoNFA EpsilonNFASet的性能极低- -待改进
+14. ENFAtoNFA EpsilonNFASet 的性能极低- -待改进 ENFAtoNFA已解决
 15.对于循环 {3} {5}这种,用DFA方式 完成
 16.添加大量DFA的测试 完成
 */

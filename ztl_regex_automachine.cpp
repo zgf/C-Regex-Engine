@@ -270,7 +270,7 @@ namespace ztl
 
 		if(CheckPure(*nfa_expression) == true)
 		{
-			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
+			dfa_expression = make_shared<DFA>(this->NfaToDfa(EpsilonNFAtoNFA(*nfa_expression)));
 		}
 		else
 		{
@@ -443,7 +443,6 @@ namespace ztl
 		while(!dfaqueue.empty())
 		{
 			auto&& front = dfaqueue.front();
-			//assert(find(dfa_nfa_map.begin(),dfa_nfa_map.end(),front) != dfa_nfa_map.end());
 			if(dfa_nfa_map[front].find(expression.second) != dfa_nfa_map[front].end())
 			{
 				final_dfa = front;
@@ -588,7 +587,9 @@ namespace ztl
 		deque<State*> queue;
 		//待处理边表
 		vector<Edge*> edge_queue;
+		unordered_set<State*> sign;
 		queue.emplace_back(target.first);
+		sign.insert(target.first);
 		while(!queue.empty())
 		{
 			auto& front = queue.front();
@@ -623,9 +624,13 @@ namespace ztl
 					}
 					else
 					{
-						//新的未处理过的节点
-						queue.emplace_back(edge->target);
-						edge_queue.emplace_back(edge);
+						if(sign.find(edge->target)==sign.end())
+						{
+							//新的未处理过的节点
+							sign.insert(edge->target);
+							queue.emplace_back(edge->target);
+							edge_queue.emplace_back(edge);
+						}
 					}
 				}
 			}
