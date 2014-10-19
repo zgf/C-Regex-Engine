@@ -61,6 +61,8 @@ namespace ztl
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
 		void AutoMachine::BuildOptimizeNFA();
 		AutoMachine::StatesType EpsilonNFAtoNFA(const AutoMachine::StatesType& target);
+		void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, unordered_map<int, unordered_set<State*>>& edge_nfa_map, const int final_index);
+		void CreatDFAStateByEdgeToNFAMap(unordered_map<int, unordered_set<State*>>& edge_nfa_map, unordered_map<unordered_set<State*>, int>& nfa_dfa_map, int& front, vector<vector<int>>& dfa_table, vector<unordered_set<State*>>& dfa_nfa_map, const int edge_sum, deque<int>& dfaqueue);
 	private:
 		void GetTableIndex(const CharRange& target,vector<int>& range)const;
 		int GetTableIndex(const int& target)const;

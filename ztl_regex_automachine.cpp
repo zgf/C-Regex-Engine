@@ -415,7 +415,39 @@ namespace ztl
 			return Edge::EdgeType::Final;
 		}
 	}
-
+	void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, unordered_map<int, unordered_set<State*>>& edge_nfa_map,const int final_index)
+	{
+		//收集边到nfa集合的映射
+		for(auto&& range = dfa_nfa_map[front].begin(); range != dfa_nfa_map[front].end(); ++range)
+		{
+			for(auto&& edge : (*range)->output)
+			{
+				assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final );
+				if(edge->type == Edge::EdgeType::Char)
+				{
+					auto&& index = any_cast<int>(edge->userdata);
+					if(edge_nfa_map.find(index) == edge_nfa_map.end())
+					{
+						edge_nfa_map.insert({ index, unordered_set<State*>() });
+					}
+					edge_nfa_map[index].insert(edge->target);
+				}
+				else if(edge->type == Edge::EdgeType::Final)
+				{
+					if(edge_nfa_map.find(table->range_table->size()) == edge_nfa_map.end())
+					{
+						edge_nfa_map.insert({ final_index, unordered_set<State*>() });
+					}
+					edge_nfa_map[table->range_table->size()].insert(edge->target);
+				}
+			}
+		}
+		
+	}
+	void AutoMachine::CreatDFAStateByEdgeToNFAMap(unordered_map<int, unordered_set<State*>>& edge_nfa_map, unordered_map<unordered_set<State*>, int>& nfa_dfa_map, int& front, vector<vector<int>>& dfa_table, vector<unordered_set<State*>>& dfa_nfa_map, const int edge_sum, deque<int>& dfaqueue)
+	{
+		
+	}
 	DFA AutoMachine::NfaToDfa(AutoMachine::StatesType& expression)
 	{
 		//前提条件.NFA只有 Char Final E
@@ -434,52 +466,38 @@ namespace ztl
 
 		int final_dfa = -1;
 		//	//不同值的边到NFA状态集合的映射
+		//这里可以改vector
 		unordered_map<int, unordered_set<State*>> edge_nfa_map;
 		dfa_table.emplace_back(vector<int>(edge_sum, -1));
-		dfa_nfa_map.emplace_back(EpsilonNFASet(expression.first));
+
+		unordered_set<State*>temp;
+		temp.insert(expression.first);
+		
+		
+		dfa_nfa_map.emplace_back(temp/*EpsilonNFASet(*/)/*)*/;
 		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });
 		//初始化队列
 		dfaqueue.emplace_back(0);
 		while(!dfaqueue.empty())
 		{
+			
 			auto&& front = dfaqueue.front();
 			if(dfa_nfa_map[front].find(expression.second) != dfa_nfa_map[front].end())
 			{
 				final_dfa = front;
 			}
-
-			//收集边到nfa集合的映射
-			for(auto&& range = dfa_nfa_map[front].begin(); range != dfa_nfa_map[front].end(); ++range)
-			{
-				for(auto&& edge : (*range)->output)
-				{
-					assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final || edge->type == Edge::EdgeType::Epsilon);
-					if(edge->type == Edge::EdgeType::Char)
-					{
-						auto&& index = any_cast<int>(edge->userdata);
-						if(edge_nfa_map.find(index) == edge_nfa_map.end())
-						{
-							edge_nfa_map.insert({ index, unordered_set<State*>() });
-						}
-						edge_nfa_map[index].insert(edge->target);
-					}
-					else if(edge->type == Edge::EdgeType::Final)
-					{
-						if(edge_nfa_map.find(table->range_table->size()) == edge_nfa_map.end())
-						{
-							edge_nfa_map.insert({ final_index, unordered_set<State*>() });
-						}
-						edge_nfa_map[table->range_table->size()].insert(edge->target);
-					}
-				}
-			}
+			
+			CollecteEdgeToNFAMap(dfa_nfa_map, front, edge_nfa_map, final_index);
 
 			for(auto&& key_iter = edge_nfa_map.begin(); key_iter != edge_nfa_map.end(); ++key_iter)
 			{
 				//获取 边的nfa集合,然后查看dfa集合 有没有状态一致的dfa.有的话,建立边
 				//没有的话,新建dfa节点再建立边,并把dfa节点加入队列
 				auto&& nfaset = key_iter->second;
-				auto&& enfaset = EpsilonNFASet(nfaset);
+				//auto&& enfaset = EpsilonNFASet(nfaset);
+				
+				auto&& enfaset = nfaset;
+				
 				auto&& find_result = nfa_dfa_map.find(enfaset);
 				if(find_result == nfa_dfa_map.end())
 				{
@@ -489,13 +507,16 @@ namespace ztl
 					auto&& dfa_node = dfa_table.size() - 1;
 					nfa_dfa_map.insert({ enfaset, dfa_node });
 					dfa_table[front][key_iter->first] = dfa_node;
-					dfaqueue.push_back(dfa_node);
+					dfaqueue.emplace_back(dfa_node);
 				}
 				else
 				{
 					dfa_table[front][key_iter->first] = find_result->second;
 				}
 			}
+			//参数太多,拖低性能
+		//	CreatDFAStateByEdgeToNFAMap(edge_nfa_map, nfa_dfa_map, front, dfa_table, dfa_nfa_map, edge_sum, dfaqueue);
+			
 			//清除边的映射
 			edge_nfa_map.clear();
 			dfaqueue.pop_front();
