@@ -68,5 +68,26 @@ OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 16.添加大量DFA的测试 完成
 */
 /*
-修改NfaToDfa 多使用vector
+修改NfaToDfa 多使用vector 解决 NFAToDfa性能开销大 搞定,
+		Capture, 完成
+		BackReference,	完成
+	OK	Jump,//无条件转移边和final差不多,只是不会匹配时被放到最后
+	OK	JumpByTime,//通过测试Time次 any pair<int,int> index,number
+	OK	JumpByTest,//通过测试  any int index	
+		Char, 完成
+		Head,完成
+		Tail,完成
+		PositivetiveLookahead, 完成
+		NegativeLookahead, 完成
+		PositiveLookbehind,完成
+		NegativeLookbehind,完成
+		Final, //边后面是终结状态 完成
+		AnonymityCapture, 完成
+		AnonymityBackReference, 完成
+		这些action完成
+*/
+/*
+NFA匹配Code大体完成 待测试
+MatchSucced TODO
+Loop DFA部分已经注释
 */

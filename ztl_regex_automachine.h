@@ -48,6 +48,8 @@ namespace ztl
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
+		void AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& begin_state, vector<AutoMachine::StatesType>& result, State* end_state);
+		void AutoMachine::SetInFiniteEndStates(bool greedy, AutoMachine::StatesType& target, const int index);
 		//创建同构图
 		AutoMachine::StatesType NewIsomorphicGraph(StatesType& target);
 
@@ -61,7 +63,7 @@ namespace ztl
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
 		void AutoMachine::BuildOptimizeNFA();
 		AutoMachine::StatesType EpsilonNFAtoNFA(const AutoMachine::StatesType& target);
-		void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, unordered_map<int, unordered_set<State*>>& edge_nfa_map, const int final_index);
+		void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, vector< unordered_set<State*>>& edge_nfa_map, const int final_index);
 		void CreatDFAStateByEdgeToNFAMap(unordered_map<int, unordered_set<State*>>& edge_nfa_map, unordered_map<unordered_set<State*>, int>& nfa_dfa_map, int& front, vector<vector<int>>& dfa_table, vector<unordered_set<State*>>& dfa_nfa_map, const int edge_sum, deque<int>& dfaqueue);
 	private:
 		void GetTableIndex(const CharRange& target,vector<int>& range)const;

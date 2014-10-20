@@ -133,9 +133,8 @@ namespace ztl
 		auto&& result = NewStates();
 		ConnetWith(result.first, left.first);
 		ConnetWith(result.first, right.first);
-		ConnetWith(left.second,result.second);
-		ConnetWith(right.second,result.second);
-	
+		ConnetWith(left.second, result.second);
+		ConnetWith(right.second, result.second);
 
 		return move(result);
 	}
@@ -201,11 +200,52 @@ namespace ztl
 		ConnetWith(result, type, index);
 		return move(result);
 	}
+	void AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& begin_state, vector<AutoMachine::StatesType>& result, State* end_state)
+	{
+		if(greedy == true)
+		{
+			ConnetWith(begin_state.second, result[0].first, Edge::EdgeType::Jump);
+			ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
+		}
+		else
+		{
+			ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
+			ConnetWith(begin_state.second, result[0].first, Edge::EdgeType::Jump);
+		}
+
+		for(auto i = 1; i < result.size(); i++)
+		{
+			if(greedy == true)
+			{
+				ConnetWith(result[i - 1].second, result[i].first, Edge::EdgeType::Jump);
+				ConnetWith(result[i - 1].second, end_state, Edge::EdgeType::Jump);
+			}
+			else
+			{
+				ConnetWith(result[i - 1].second, end_state, Edge::EdgeType::Jump);
+				ConnetWith(result[i - 1].second, result[i].first, Edge::EdgeType::Jump);
+			}
+		}
+		ConnetWith(result.back().second, end_state, Edge::EdgeType::Jump);
+	}
+	void AutoMachine::SetInFiniteEndStates(bool greedy, AutoMachine::StatesType& target,const int index)
+	{
+		if (greedy == true)
+		{
+			ConnetWith(target.first,target.first, Edge::EdgeType::JumpByTest, index);
+			ConnetWith(target, Edge::EdgeType::Jump);
+		}
+		else
+		{
+			ConnetWith(target, Edge::EdgeType::Jump);
+			ConnetWith(target.first, target.first, Edge::EdgeType::JumpByTest, index);
+		}
+	}
 	AutoMachine::StatesType AutoMachine::NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end)
 	{
-		//修改对于 *+?的贪婪匹配,直接扩展开来
 		if(greedy == true && begin == 0 && end == 1)
 		{
+			//?
 			auto&& new_state = NewStates();
 			ConnetWith(new_state);
 			ConnetWith(new_state.first, substates.first);
@@ -242,13 +282,61 @@ namespace ztl
 			}
 			return { result[0].first, result.back().second };
 		}
+		else if(greedy == true)
+		{
+			if (end == -1)
+			{//0--n
+
+			}
+			else
+			{//2---1
+
+			}
+		}
+	/*	auto&& index = GetSubexpressionIndex(substates);
+		auto&& begin_state = NewStates();
+		ConnetWith(begin_state, Edge::EdgeType::JumpByTime, pair<int, int>(index, begin));
+		if(end != -1)
+		{
+			vector<AutoMachine::StatesType> result(end - begin);
+			for(auto i = 0; i < result.size(); i++)
+			{
+				result[i] = NewStates();
+				ConnetWith(result[i], Edge::EdgeType::JumpByTest, index);
+			}
+			auto&& end_state = NewOneState();
+			if(!result.empty())
+			{
+				ConnectLoopChain(greedy, begin_state, result, end_state);
+			}
+			else
+			{
+				ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
+			}
+			return { begin_state.first, end_state };
+		}
 		else
 		{
-			auto&& result = NewStates();
-			auto&& index = GetSubexpressionIndex(substates);
-			ConnetWith(result, Edge::EdgeType::Loop, Edge::LoopUserData(index, begin, end, greedy));
-			return move(result);
-		}
+			auto&& end_states = NewStates();
+			SetInFiniteEndStates(greedy, end_states,index);
+			ConnetWith(begin_state.second, end_states.first, Edge::EdgeType::Jump);
+			return { begin_state.first, end_states.second };
+		}*/
+		//修改对于 *+?的贪婪匹配,直接扩展开来
+		
+		//else if(greedy == true)
+		//{
+		//	auto&& index = GetSubexpressionIndex(substates);
+		//	auto&&result = NewStates();
+		//	ConnetWith(result, Edge::EdgeType::JumpByTime, pair<int, int>(index,begin));
+
+		//	/*auto&& result = NewStates();
+		//	ConnetWith(result, Edge::EdgeType::Loop, Edge::LoopUserData(index, begin, end, greedy));
+		//	return move(result);*/
+		//}
+		//else
+		//{
+		//}
 	}
 
 	int AutoMachine::GetSubexpressionIndex(const StatesType& substates)
@@ -293,7 +381,7 @@ namespace ztl
 
 				for(auto&& iter : element->output)
 				{
-					if (iter->target == target)
+					if(iter->target == target)
 					{
 						result.insert(element);
 					}
@@ -415,38 +503,37 @@ namespace ztl
 			return Edge::EdgeType::Final;
 		}
 	}
-	void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, unordered_map<int, unordered_set<State*>>& edge_nfa_map,const int final_index)
+	void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, vector< unordered_set<State*>>& edge_nfa_map, const int final_index)
 	{
 		//收集边到nfa集合的映射
 		for(auto&& range = dfa_nfa_map[front].begin(); range != dfa_nfa_map[front].end(); ++range)
 		{
 			for(auto&& edge : (*range)->output)
 			{
-				assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final );
+				assert(edge->type == Edge::EdgeType::Char || edge->type == Edge::EdgeType::Final);
 				if(edge->type == Edge::EdgeType::Char)
 				{
 					auto&& index = any_cast<int>(edge->userdata);
-					if(edge_nfa_map.find(index) == edge_nfa_map.end())
-					{
-						edge_nfa_map.insert({ index, unordered_set<State*>() });
-					}
+					
 					edge_nfa_map[index].insert(edge->target);
 				}
 				else if(edge->type == Edge::EdgeType::Final)
 				{
-					if(edge_nfa_map.find(table->range_table->size()) == edge_nfa_map.end())
-					{
-						edge_nfa_map.insert({ final_index, unordered_set<State*>() });
-					}
-					edge_nfa_map[table->range_table->size()].insert(edge->target);
+					edge_nfa_map[final_index].insert(edge->target);
 				}
 			}
 		}
-		
 	}
 	void AutoMachine::CreatDFAStateByEdgeToNFAMap(unordered_map<int, unordered_set<State*>>& edge_nfa_map, unordered_map<unordered_set<State*>, int>& nfa_dfa_map, int& front, vector<vector<int>>& dfa_table, vector<unordered_set<State*>>& dfa_nfa_map, const int edge_sum, deque<int>& dfaqueue)
 	{
-		
+	}
+	void ClearEdgeNfaMap(vector<int>& need_clear, vector<unordered_set<State*>>& edge_nfa_map)
+	{
+		for(auto& element : need_clear)
+		{
+			edge_nfa_map[element].clear();
+		}
+		need_clear.clear();
 	}
 	DFA AutoMachine::NfaToDfa(AutoMachine::StatesType& expression)
 	{
@@ -467,58 +554,58 @@ namespace ztl
 		int final_dfa = -1;
 		//	//不同值的边到NFA状态集合的映射
 		//这里可以改vector
-		unordered_map<int, unordered_set<State*>> edge_nfa_map;
+		vector<unordered_set<State*>> edge_nfa_map(edge_sum);
 		dfa_table.emplace_back(vector<int>(edge_sum, -1));
+		//unordered_set<State*>temp;
+		//temp.insert();
 
-		unordered_set<State*>temp;
-		temp.insert(expression.first);
-		
-		
-		dfa_nfa_map.emplace_back(temp/*EpsilonNFASet(*/)/*)*/;
+		dfa_nfa_map.emplace_back(unordered_set<State*>({ expression.first })/*EpsilonNFASet(*/)/*)*/;
 		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });
 		//初始化队列
 		dfaqueue.emplace_back(0);
+		vector<int> need_clear;
+		need_clear.reserve(8);
 		while(!dfaqueue.empty())
 		{
-			
 			auto&& front = dfaqueue.front();
 			if(dfa_nfa_map[front].find(expression.second) != dfa_nfa_map[front].end())
 			{
 				final_dfa = front;
 			}
-			
+
 			CollecteEdgeToNFAMap(dfa_nfa_map, front, edge_nfa_map, final_index);
 
-			for(auto&& key_iter = edge_nfa_map.begin(); key_iter != edge_nfa_map.end(); ++key_iter)
+			for(auto&& i = 0; i < edge_nfa_map.size(); ++i)
 			{
 				//获取 边的nfa集合,然后查看dfa集合 有没有状态一致的dfa.有的话,建立边
 				//没有的话,新建dfa节点再建立边,并把dfa节点加入队列
-				auto&& nfaset = key_iter->second;
-				//auto&& enfaset = EpsilonNFASet(nfaset);
-				
-				auto&& enfaset = nfaset;
-				
-				auto&& find_result = nfa_dfa_map.find(enfaset);
-				if(find_result == nfa_dfa_map.end())
+				if(!edge_nfa_map[i].empty())
 				{
-					//新节点
-					dfa_table.emplace_back(vector<int>(edge_sum, -1));
-					dfa_nfa_map.emplace_back(enfaset);
-					auto&& dfa_node = dfa_table.size() - 1;
-					nfa_dfa_map.insert({ enfaset, dfa_node });
-					dfa_table[front][key_iter->first] = dfa_node;
-					dfaqueue.emplace_back(dfa_node);
-				}
-				else
-				{
-					dfa_table[front][key_iter->first] = find_result->second;
+					need_clear.emplace_back(i);
+					auto&& nfaset = edge_nfa_map[i];
+					//auto&& enfaset = EpsilonNFASet(nfaset);
+
+					auto&& find_result = nfa_dfa_map.find(nfaset);
+					if(find_result == nfa_dfa_map.end())
+					{
+						//新节点
+						dfa_table.emplace_back(vector<int>(edge_sum, -1));
+						dfa_nfa_map.emplace_back(nfaset);
+						auto&& dfa_node = dfa_table.size() - 1;
+						nfa_dfa_map.insert({ nfaset, dfa_node });
+						dfa_table[front][i] = dfa_node;
+						dfaqueue.emplace_back(dfa_node);
+					}
+					else
+					{
+						dfa_table[front][i] = find_result->second;
+					}
 				}
 			}
-			//参数太多,拖低性能
-		//	CreatDFAStateByEdgeToNFAMap(edge_nfa_map, nfa_dfa_map, front, dfa_table, dfa_nfa_map, edge_sum, dfaqueue);
-			
+
+			ClearEdgeNfaMap(need_clear, edge_nfa_map);
 			//清除边的映射
-			edge_nfa_map.clear();
+
 			dfaqueue.pop_front();
 		}
 		//assert(final_dfa.size() == 1);
@@ -541,7 +628,7 @@ namespace ztl
 			{
 				if(element->type == Edge::EdgeType::Epsilon)
 				{
-					if(find(result.begin(), result.end(),element->target) == result.end())
+					if(find(result.begin(), result.end(), element->target) == result.end())
 					{
 						result.insert(element->target);
 						queue.push_back(element->target);
@@ -550,7 +637,7 @@ namespace ztl
 			}
 			queue.pop_front();
 		}
-		return result ;
+		return result;
 	}
 	unordered_set<State*> AutoMachine::EpsilonNFASet(unordered_set<State*>& target)
 	{
@@ -584,7 +671,6 @@ namespace ztl
 			{
 				dfa_subexpression->insert({ i, NfaToDfa(subexpress) });
 			}
-			
 		}
 		for(size_t i = 0; i < this->anonymity_captures->size(); ++i)
 		{
@@ -595,7 +681,6 @@ namespace ztl
 			{
 				dfa_anonymity_captures->insert({ i, NfaToDfa(subexpress) });
 			}
-			
 		}
 	}
 
@@ -645,7 +730,7 @@ namespace ztl
 					}
 					else
 					{
-						if(sign.find(edge->target)==sign.end())
+						if(sign.find(edge->target) == sign.end())
 						{
 							//新的未处理过的节点
 							sign.insert(edge->target);

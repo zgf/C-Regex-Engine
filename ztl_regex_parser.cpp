@@ -221,7 +221,7 @@ namespace ztl
 		for(auto i = index; i < tokens->size(); i++)
 		{
 			auto& type = (*tokens)[i].type;
-			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin||type == TokenType::NoneCapture)
+			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin||type == TokenType::NoneCapture||type == TokenType::RegexMacro)
 			{
 				count++;
 			}

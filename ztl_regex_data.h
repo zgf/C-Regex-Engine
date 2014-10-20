@@ -155,7 +155,7 @@ namespace ztl
 			Epsilon,
 			Capture,
 			BackReference,
-			Loop,
+			//Loop, Loop被展开成JUmp E Char Edge
 			Char,
 			Head,
 			Tail,
@@ -166,6 +166,9 @@ namespace ztl
 			Final, //边后面是终结状态
 			AnonymityCapture,
 			AnonymityBackReference,
+			Jump,//无条件转移边和final差不多,只是不会匹配时被放到最后
+			JumpByTime,//通过测试Time次 any pair<int,int> index,number
+			JumpByTest,//通过测试  any int index
 			//MarcoReference,NFA阶段被扩展
 		};
 		struct LoopUserData

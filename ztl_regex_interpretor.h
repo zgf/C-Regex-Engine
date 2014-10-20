@@ -42,7 +42,7 @@ namespace ztl
 		wstring								matched;
 		//匹配在串的位置
 		int									start;
-		int									end;
+		int									length;
 		bool								success=false;
 	};
 	class SaveState
@@ -53,7 +53,7 @@ namespace ztl
 		int	             input_index;
 		//当前状态通过当前边消耗的字符长度
 		int	             length;
-		bool             meet_final;
+	//	bool             meet_final;
 		SaveState()      = default;
 		SaveState(State* _state, int edge, int input) :states(_state), edge_index(edge), input_index(input)
 		{
@@ -66,8 +66,10 @@ namespace ztl
 		Ptr<vector<RegexControl>>   optional;
 		Ptr<AutoMachine>			machine;
 		vector<SaveState>			state_stack;
+		unordered_map<wstring, GroupIterm> capture_value;
+		vector<GroupIterm> anonymity_capture_value;
 	public:
-		using ActionType = unordered_map < Edge::EdgeType, function<int(const wstring& input, const int begin, const int end, int& index, const State* current_state, const Edge* current_edge, RegexInterpretor& interpretor, RegexMatchResult& result)> > ;
+		using ActionType = unordered_map < Edge::EdgeType, function<bool(const wstring& input, const int start,const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)> >;
 	private:
 		static ActionType actions;
 	public:
@@ -96,8 +98,10 @@ namespace ztl
 			//NFA 匹配,从start开始,不移动start,看能否到达终结状态
 		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start,const int end);
 		
-		RegexMatchResult MatchSucced();
+		RegexMatchResult MatchSucced(const wstring& input);
 		RegexMatchResult MatchFailed();
 		int GetWCharIndex(const wchar_t character)const;
+	public:
+	//	bool RegexInterpretor::LookAroundAction(bool reverse, const wstring& input, const int begin, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)
 	};
 }

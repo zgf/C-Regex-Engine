@@ -401,11 +401,11 @@ namespace ztl
 			optional->emplace_back(RegexControl::ExplicitCapture);
 			RegexInterpretor interpretor(pattern, optional);
 			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
-			//std::cout << result.success << endl;
+			std::cout << result.success << endl;
 		//	std::wcout << result.matched << endl;
 			assert(result.success == true);
 			assert(result.start == matched_start);
-			assert(result.end == matched_end);
+			assert(result.length == matched_end-matched_start);
 			assert(result.matched == matched_string);
 		};
 		auto&& TestCaseExpectFalse = [](const wstring& pattern, const wstring& input, const wstring& matched)
@@ -417,15 +417,16 @@ namespace ztl
 		//	std::wcout << result.matched << endl;
 			assert(result.matched == matched);
 		};
-		TestCaseExpectTrue(L"ab", L"abc", 0, 2, L"ab");
-		TestCaseExpectTrue(L"ab", L"cabc", 1,3, L"ab");
-		TestCaseExpectTrue(L"a", L"abc", 0, 1, L"a");
-		TestCaseExpectTrue(L"a", L"bca", 2, 3, L"a");
-		TestCaseExpectTrue(L"a|b", L"bcd", 0, 1, L"b");
-		TestCaseExpectTrue(L"a|b", L"acd", 0, 1, L"a");
-		TestCaseExpectTrue(L"a|b", L"cabd", 1, 2, L"a");
+		wstring temp;
+		//TestCaseExpectTrue(L"ab", L"abc", 0, 2, L"ab");
+		//TestCaseExpectTrue(L"ab", L"cabc", 1,3, L"ab");
+		//TestCaseExpectTrue(L"a", L"abc", 0, 1, L"a");
+		//TestCaseExpectTrue(L"a", L"bca", 2, 3, L"a");
+		//TestCaseExpectTrue(L"a|b", L"bcd", 0, 1, L"b");
+		//TestCaseExpectTrue(L"a|b", L"acd", 0, 1, L"a");
+		//TestCaseExpectTrue(L"a|b", L"cabd", 1, 2, L"a");
 
-		TestCaseExpectTrue(L"a*", L"aaa", 0, 3, L"aaa");
+		/*TestCaseExpectTrue(L"a*", L"aaa", 0, 3, L"aaa");
 		TestCaseExpectTrue(L"a*", L"bbbaaabb", 3, 6, L"aaa");
 		TestCaseExpectTrue(L"a*", L"bbbaaa", 3, 6, L"aaa");
 
@@ -433,7 +434,7 @@ namespace ztl
 		TestCaseExpectTrue(L"a+", L"baabb", 1, 3, L"aa");
 		TestCaseExpectTrue(L"a+", L"baa", 1, 3, L"aa");
 
-		TestCaseExpectTrue(L"ba?", L"baabb", 0, 2, L"ba");
+		TestCaseExpectTrue(L"ba?", L"baabb", 0, 2, L"ba");*/
 		TestCaseExpectTrue(L"ba?", L"bb", 0, 1, L"b");
 
 		TestCaseExpectTrue(L"[a-f]", L"gag", 1, 2, L"a");
@@ -445,6 +446,9 @@ namespace ztl
 		TestCaseExpectTrue(L"(\\d{3})", L"321312", 0, 3, L"321");
 		TestCaseExpectTrue(L"((3)-(3))", L"3-3", 0,3, L"3-3");
 		TestCaseExpectTrue(L"((\\d))", L"2", 0, 1, L"2");
+		temp = L"601519305@";
+		//TestCaseExpectTrue(LR"((\w+)*)", temp, 0, temp.size(), L"601519305@");
+
 		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"601519305@qq.com", 0, 16, L"601519305@qq.com");
 		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"aaa@msn.com", 0, 11, L"aaa@msn.com");
 
@@ -469,7 +473,7 @@ namespace ztl
 
 		TestCaseExpectTrue(LR"((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9]))", L"192.168.0.1", 0, 11, L"192.168.0.1");
 		TestCaseExpectTrue(LR"((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9]))", L"222.234.1.4", 0, 11, L"222.234.1.4");
-		wstring temp = L"baidu.com";
+		 temp = L"baidu.com";
 		TestCaseExpectTrue(LR"([a-zA-Z0-9]+([a-zA-Z0-9\-\.]+)?\.(com|org|net|cn|com\.cn|edu\.cn|grv\.cn))", temp, 0, temp.size(), L"baidu.com");
 		temp = L"2064d355-c0b9-41d8-9ef7-9d8b26524751";
 		TestCaseExpectTrue(LR"([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})", temp, 0, temp.size(), temp);
