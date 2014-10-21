@@ -239,13 +239,7 @@ namespace ztl
 	Ptr<Expression> RegexParser::NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		//auto end_index = index;
-		/*auto current_type = tokens->at(end_index).type;
-		while(current_type != TokenType::CaptureEnd)
-		{
-			end_index++;
-			current_type = tokens->at(end_index).type;
-		}*/
+		
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 		auto&& exp = Alter(pattern, tokens, index, end_index);
 		auto&& result = make_shared<NoneCaptureExpression>(exp);
@@ -255,13 +249,7 @@ namespace ztl
 	Ptr<Expression> RegexParser::RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		/*auto end_index = index;
-		auto current_type = tokens->at(end_index).type;
-		while(current_type != TokenType::CaptureEnd)
-		{
-			end_index++;
-			current_type = tokens->at(end_index).type;
-		}*/
+		
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
 		wstring name = Named(pattern, tokens, index);

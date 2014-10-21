@@ -34,7 +34,7 @@ namespace ztl
 	}
 	void AutoMachine::ConnetWith(State*& start, State*& end, const Edge::EdgeType& type)
 	{
-		auto&& edge = NewEdge();
+		auto edge = NewEdge();
 		edge->type = type;
 		start->output.push_back(edge);
 		//end->input.push_back(edge);
@@ -136,7 +136,7 @@ namespace ztl
 		ConnetWith(left.second, result.second);
 		ConnetWith(right.second, result.second);
 
-		return move(result);
+		return result;
 	}
 	AutoMachine::StatesType AutoMachine::NewSequenceStates(StatesType& left, StatesType& right)
 	{
@@ -146,7 +146,41 @@ namespace ztl
 		//left.second->output = right.first->output;
 		return { left.first, right.second };
 	}
+	vector<AutoMachine::StatesType> AutoMachine::NewStateSequence(StatesType& target, int number)
+	{
+		vector<StatesType> stores(number);
+		for(auto& element : stores)
+		{
+			element = this->NewIsomorphicGraph(target);
+		}
+		return stores;
+	}
 
+	AutoMachine::StatesType AutoMachine::NewSequenceStates(StatesType& target, int number)
+	{
+		if(number == 0)
+		{
+			auto reuslt = NewStates();
+			ConnetWith(reuslt);
+			return reuslt;
+		}
+		else if(number == 1)
+		{
+			auto stores = NewStateSequence(target, number);
+			return stores.front();
+		}
+		else
+		{
+			auto stores = NewStateSequence(target, number);
+			for(auto i = 1; i < stores.size(); i++)
+			{
+				auto& left = stores[i - 1];
+				auto& right = stores[i];
+				ConnetWith(left.second, right.first);
+			}
+			return { stores.front().first, stores.back().second };
+		}
+	}
 	AutoMachine::StatesType AutoMachine::NewBeinAndEndStates(const Edge::EdgeType& type)
 	{
 		auto&& result = NewStates();
@@ -200,143 +234,190 @@ namespace ztl
 		ConnetWith(result, type, index);
 		return move(result);
 	}
-	void AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& begin_state, vector<AutoMachine::StatesType>& result, State* end_state)
+	pair<Edge::EdgeType, Edge::EdgeType > SetPriority(bool greedy)
 	{
+		auto height = Edge::EdgeType::Final;
+		auto low = Edge::EdgeType::Epsilon;
 		if(greedy == true)
 		{
-			ConnetWith(begin_state.second, result[0].first, Edge::EdgeType::Jump);
-			ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
+			height = Edge::EdgeType::Epsilon;
 		}
-		else
+		return { height, low };
+	}
+	AutoMachine::StatesType AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& loop_head, int number)
+	{
+		auto priority = SetPriority(greedy);
+		auto height = priority.first;
+		auto low = priority.second;
+		vector<AutoMachine::StatesType> chain;
+		chain.emplace_back(loop_head);
+		auto temp = NewStateSequence(loop_head, number);
+		chain.insert(chain.end(), temp.begin(), temp.end());
+		auto end_state = NewOneState();
+		assert(chain.size() > 1);
+		for(auto i = 1; i < chain.size(); i++)
 		{
-			ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
-			ConnetWith(begin_state.second, result[0].first, Edge::EdgeType::Jump);
+			ConnetWith(chain[i - 1].second, chain[i].first, height);
+			ConnetWith(chain[i - 1].second, end_state, low);
 		}
 
-		for(auto i = 1; i < result.size(); i++)
-		{
-			if(greedy == true)
-			{
-				ConnetWith(result[i - 1].second, result[i].first, Edge::EdgeType::Jump);
-				ConnetWith(result[i - 1].second, end_state, Edge::EdgeType::Jump);
-			}
-			else
-			{
-				ConnetWith(result[i - 1].second, end_state, Edge::EdgeType::Jump);
-				ConnetWith(result[i - 1].second, result[i].first, Edge::EdgeType::Jump);
-			}
-		}
-		ConnetWith(result.back().second, end_state, Edge::EdgeType::Jump);
+		ConnetWith(chain.back().second, end_state, Edge::EdgeType::Epsilon);
+		return { loop_head.first, end_state };
 	}
-	void AutoMachine::SetInFiniteEndStates(bool greedy, AutoMachine::StatesType& target,const int index)
+
+	AutoMachine::StatesType AutoMachine::LoopIncludeInFinite(bool greedy, int number, AutoMachine::StatesType& substates)
 	{
-		if (greedy == true)
+		assert(number > 1);
+		auto end_node = NewOneState();
+		auto priority = SetPriority(greedy);
+		auto height = priority.first;
+		auto low = priority.second;
+		if(number > 1)
 		{
-			ConnetWith(target.first,target.first, Edge::EdgeType::JumpByTest, index);
-			ConnetWith(target, Edge::EdgeType::Jump);
+			auto loop_head = NewSequenceStates(substates, number - 1);
+			auto middle = NewIsomorphicGraph(substates);
+			auto end_node = NewOneState();
+			ConnetWith(loop_head.second, middle.first);
+			ConnetWith(middle.second, middle.first, height);
+			ConnetWith(middle.second, end_node, low);
+			return { loop_head.first, end_node };
+		}
+	}
+
+	AutoMachine::StatesType AutoMachine::NewChooseClourseStates(bool greedy, StatesType& target)
+	{
+		auto&& new_state = NewStates();
+		ConnetWith(new_state.first, target.first);
+		ConnetWith(target.second, new_state.second);
+		if(greedy == true)
+		{
+			ConnetWith(new_state);
 		}
 		else
 		{
-			ConnetWith(target, Edge::EdgeType::Jump);
-			ConnetWith(target.first, target.first, Edge::EdgeType::JumpByTest, index);
+			ConnetWith(new_state, Edge::EdgeType::Final);
 		}
+		return new_state;
+	}
+	AutoMachine::StatesType AutoMachine::NewPositiveClourseStates(bool greedy, StatesType& target)
+	{
+		auto head = NewIsomorphicGraph(target);
+		auto kleen = NewKleenClourseStates(greedy, target);
+
+		ConnetWith(head.second, kleen.first);
+
+		return { head.first, kleen.second };
+	}
+	AutoMachine::StatesType AutoMachine::NewKleenClourseStates(bool greedy, StatesType& target)
+	{
+		auto&& result = NewStates();
+		if(greedy == true)
+		{
+			ConnetWith(result.second, target.first);
+		}
+		else
+		{
+			ConnetWith(result.second, target.first, Edge::EdgeType::Final);
+		}
+		ConnetWith(target.second, result.first);
+		ConnetWith(result.first, result.second);
+		return result;
 	}
 	AutoMachine::StatesType AutoMachine::NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end)
 	{
-		if(greedy == true && begin == 0 && end == 1)
-		{
-			//?
-			auto&& new_state = NewStates();
-			ConnetWith(new_state);
-			ConnetWith(new_state.first, substates.first);
-			ConnetWith(substates.second, new_state.second);
-			return new_state;
-		}
-		else if(greedy == true && begin == 0 && end == -1)
-		{
-			auto&& result = NewStates();
-			ConnetWith(result);
-			ConnetWith(result.second, substates.first);
-			ConnetWith(substates.second, result.first);
-			return move(result);
-		}
-		else if(greedy == true && begin == 1 && end == -1)
-		{
-			ConnetWith(substates.second, substates.first);
-			return substates;
-		}
-		else if(greedy == true && begin == end)
-		{
-			assert(begin != 0);
-			vector<AutoMachine::StatesType> result(begin);
-			result[0] = substates;
-			for(auto i = 1; i < result.size(); i++)
-			{
-				result[i] = this->NewIsomorphicGraph(substates);
-			}
-			for(auto i = 0; i < result.size() - 1; i++)
-			{
-				auto&& left = result[i];
-				auto&& right = result[i + 1];
-				ConnetWith(left.second, right.first);
-			}
-			return { result[0].first, result.back().second };
-		}
-		else if(greedy == true)
-		{
-			if (end == -1)
-			{//0--n
+		//
 
-			}
-			else
-			{//2---1
+		//
 
-			}
+		//if(begin == 0 && end == 1)
+		//{
+		//	auto&& new_state = NewStates();
+		//	ConnetWith(new_state.first, substates.first);
+		//	ConnetWith(substates.second, new_state.second);
+		//	ConnetWith(new_state);
+		//	return new_state;
+		//	//return NewChooseClourseStates(greedy,substates);
+		//}
+		//else if(begin == 0 && end == -1)
+		//{
+		//	ConnetWith(substates.second, substates.first);
+		//	ConnetWith(substates.first, substates.second);
+		//	return substates;
+		//	//return NewKleenClourseStates(greedy,substates);
+		//}
+		//else if(begin == 1 && end == -1)
+		//{
+		//	ConnetWith(substates.second, substates.first);
+		//	return substates;
+		//	//return NewPositiveClourseStates(greedy,substates);
+		//}
+		//else if(begin == end)
+		//{
+		//
+		//	if(begin == 1)
+		//	{
+		//		return substates;
+		//	}
+		//	else
+		//	{
+		//		auto stores = NewStateSequence(substates, begin);
+		//		for(auto i = 1; i < stores.size(); i++)
+		//		{
+		//			auto& left = stores[i - 1];
+		//			auto& right = stores[i];
+		//			ConnetWith(left.second, right.first);
+		//		}
+		//		return { stores.front().first, stores.back().second };
+		//	}
+		//}
+
+		auto& target = substates;
+		auto begin_state = NewSequenceStates(target, begin == 0 ? 0 : begin - 1);
+		auto&& end_state = NewOneState();
+
+		auto priority = SetPriority(greedy);
+		auto height = priority.first;
+		auto low = priority.second;
+		auto number = -1;
+
+		if(end == -1)
+		{
+			number = 1;
 		}
-	/*	auto&& index = GetSubexpressionIndex(substates);
-		auto&& begin_state = NewStates();
-		ConnetWith(begin_state, Edge::EdgeType::JumpByTime, pair<int, int>(index, begin));
+		else if(begin == 0)
+		{
+			number = end;
+		}
+		else if(begin != 0)
+		{
+			number = end - begin + 1;
+		}
+
+		auto chain = NewStateSequence(target, number);
+
+		for(auto i = 1; i < chain.size(); i++)
+		{
+			ConnetWith(chain[i - 1].second, chain[i].first, height);
+			ConnetWith(chain[i - 1].second, end_state, low);
+		}
+
 		if(end != -1)
 		{
-			vector<AutoMachine::StatesType> result(end - begin);
-			for(auto i = 0; i < result.size(); i++)
-			{
-				result[i] = NewStates();
-				ConnetWith(result[i], Edge::EdgeType::JumpByTest, index);
-			}
-			auto&& end_state = NewOneState();
-			if(!result.empty())
-			{
-				ConnectLoopChain(greedy, begin_state, result, end_state);
-			}
-			else
-			{
-				ConnetWith(begin_state.second, end_state, Edge::EdgeType::Jump);
-			}
-			return { begin_state.first, end_state };
+			ConnetWith(begin_state.second, chain.front().first);
+			ConnetWith(chain.back().second, end_state);
 		}
 		else
 		{
-			auto&& end_states = NewStates();
-			SetInFiniteEndStates(greedy, end_states,index);
-			ConnetWith(begin_state.second, end_states.first, Edge::EdgeType::Jump);
-			return { begin_state.first, end_states.second };
-		}*/
-		//修改对于 *+?的贪婪匹配,直接扩展开来
-		
-		//else if(greedy == true)
-		//{
-		//	auto&& index = GetSubexpressionIndex(substates);
-		//	auto&&result = NewStates();
-		//	ConnetWith(result, Edge::EdgeType::JumpByTime, pair<int, int>(index,begin));
+			ConnetWith(begin_state.second, chain.front().first);
+			ConnetWith(chain.back().second, end_state, low);
+			ConnetWith(chain.back().second, chain.back().first, height);
+		}
 
-		//	/*auto&& result = NewStates();
-		//	ConnetWith(result, Edge::EdgeType::Loop, Edge::LoopUserData(index, begin, end, greedy));
-		//	return move(result);*/
-		//}
-		//else
-		//{
-		//}
+		if(begin == 0)
+		{
+			ConnetWith(begin_state.second, end_state);
+		}
+		return { begin_state.first, end_state };
 	}
 
 	int AutoMachine::GetSubexpressionIndex(const StatesType& substates)
@@ -415,14 +496,7 @@ namespace ztl
 					queue.push_back(current_edge->target);
 				}
 
-				/*Edge* new_dege = NewEdge();
-				new_dege->type = current_edge->type;
-				new_dege->userdata = current_edge->userdata;
-				new_dege->target = sign[current_edge->target];*/
-				//new_dege->srouce = sign[front];
 				ConnetWith(sign[front], sign[current_edge->target], current_edge->type, current_edge->userdata);
-				//sign[front]->output.push_back(new_dege);
-				//sign[current_edge->target]->input.emplace_back(new_dege);
 			}
 			queue.pop_front();
 		}
@@ -514,7 +588,7 @@ namespace ztl
 				if(edge->type == Edge::EdgeType::Char)
 				{
 					auto&& index = any_cast<int>(edge->userdata);
-					
+
 					edge_nfa_map[index].insert(edge->target);
 				}
 				else if(edge->type == Edge::EdgeType::Final)
@@ -683,7 +757,27 @@ namespace ztl
 			}
 		}
 	}
-
+	//获取从target节点可达的所有非空边
+	vector<Edge*> GetReachNoneEEdge(State* target, unordered_map<State*, State*>& state_map,State* front)
+	{
+		state_map.insert({ target, front });
+		int last = -1;
+		vector<Edge*>result;
+		for(auto i = 0; i < target->output.size(); i++)
+		{
+			auto& element = target->output[i];
+			if(element->type == Edge::EdgeType::Epsilon)
+			{
+				auto temp = GetReachNoneEEdge(element->target,state_map,front);
+				
+				result.insert(result.end(), next(target->output.begin(),last + 1), next(target->output.begin(), i));
+				last = i;
+				result.insert(result.end(), temp.begin(), temp.end());
+			}
+		}
+		result.insert(result.end(), next(target->output.begin(), last + 1), target->output.end());
+		return move(result);
+	}
 	//从ENFA到普通NFA
 	AutoMachine::StatesType AutoMachine::EpsilonNFAtoNFA(const AutoMachine::StatesType& target)
 	{
@@ -699,48 +793,48 @@ namespace ztl
 		while(!queue.empty())
 		{
 			auto& front = queue.front();
-			auto&& enfaset = EpsilonNFASet(front);
-			//enfaset加入映射表
-			for(auto& element : enfaset)
-			{
-				state_map.insert({ element, front });
-			}
-			//enfaset的每一条边非空边交给front,front的空边删除
-			vector<Edge*> new_front_output;
-			for(auto& element : enfaset)
-			{
-				for(auto&& edge : element->output)
-				{
-					if(edge->type != Edge::EdgeType::Epsilon)
-					{
-						new_front_output.emplace_back(edge);
-					}
-				}
-			}
-			front->output = move(new_front_output);
-			//处理enfaset的每一条边
+
+			front->output = move(GetReachNoneEEdge(front, state_map, front));
+			//auto&& enfaset = EpsilonNFASet(front);
+			////enfaset加入映射表
+			//for(auto& element : enfaset)
+			//{
+			//	state_map.insert({ element, front });
+			//}
+			////enfaset的每一条边非空边交给front,front的空边删除
+			//vector<Edge*> new_front_output;
+			//for(auto& element : enfaset)
+			//{
+			//	for(auto&& edge : element->output)
+			//	{
+			//		if(edge->type != Edge::EdgeType::Epsilon)
+			//		{
+			//			new_front_output.emplace_back(edge);
+			//		}
+			//	}
+			//}
+			//front->output = move(new_front_output);
+			////处理enfaset的每一条边
 
 			for(auto&& edge : front->output)
 			{
-				if(edge->type != Edge::EdgeType::Epsilon)
+				assert(edge->type != Edge::EdgeType::Epsilon);
+
+				if(state_map.find(edge->target) != state_map.end())
 				{
-					if(state_map.find(edge->target) != state_map.end())
+					edge->target = state_map[edge->target];
+				}
+				else
+				{
+					if(sign.find(edge->target) == sign.end())
 					{
-						edge->target = state_map[edge->target];
-					}
-					else
-					{
-						if(sign.find(edge->target) == sign.end())
-						{
-							//新的未处理过的节点
-							sign.insert(edge->target);
-							queue.emplace_back(edge->target);
-							edge_queue.emplace_back(edge);
-						}
+						//新的未处理过的节点
+						sign.insert(edge->target);
+						queue.emplace_back(edge->target);
+						edge_queue.emplace_back(edge);
 					}
 				}
 			}
-
 			queue.pop_front();
 		}
 

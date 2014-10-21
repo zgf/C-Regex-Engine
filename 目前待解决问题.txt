@@ -90,4 +90,7 @@ OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
 NFA匹配Code大体完成 待测试
 MatchSucced TODO
 Loop DFA部分已经注释
+
+重写Loop部分
+砍掉 RI的value部分,这些应该直接放入匹配结果里面去
 */

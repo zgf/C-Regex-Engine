@@ -48,8 +48,15 @@ namespace ztl
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
-		void AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& begin_state, vector<AutoMachine::StatesType>& result, State* end_state);
-		void AutoMachine::SetInFiniteEndStates(bool greedy, AutoMachine::StatesType& target, const int index);
+		AutoMachine::StatesType NewChooseClourseStates(bool greedy,StatesType& target);
+		AutoMachine::StatesType NewPositiveClourseStates(bool greedy, StatesType& target);
+		AutoMachine::StatesType NewKleenClourseStates(bool greedy, StatesType& target);
+		AutoMachine::StatesType NewSequenceStates(StatesType& target, int number);
+
+		vector<AutoMachine::StatesType> NewStateSequence(StatesType& target, int number);
+
+		AutoMachine::StatesType AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& loop_head, int number);
+		AutoMachine::StatesType AutoMachine::LoopIncludeInFinite(bool greedy, int number,AutoMachine::StatesType& substates);
 		//创建同构图
 		AutoMachine::StatesType NewIsomorphicGraph(StatesType& target);
 

@@ -43,7 +43,7 @@ namespace ztl
 		//匹配在串的位置
 		int									start;
 		int									length;
-		bool								success=false;
+		bool								success = false;
 	};
 	class SaveState
 	{
@@ -53,8 +53,8 @@ namespace ztl
 		int	             input_index;
 		//当前状态通过当前边消耗的字符长度
 		int	             length;
-	//	bool             meet_final;
-		SaveState()      = default;
+		//	bool             meet_final;
+		SaveState() = default;
 		SaveState(State* _state, int edge, int input) :states(_state), edge_index(edge), input_index(input)
 		{
 		}
@@ -64,12 +64,12 @@ namespace ztl
 	public:
 		wstring						pattern;
 		Ptr<vector<RegexControl>>   optional;
-		Ptr<AutoMachine>			machine;
+		Ptr<AutoMachine>			machine;/*
 		vector<SaveState>			state_stack;
 		unordered_map<wstring, GroupIterm> capture_value;
-		vector<GroupIterm> anonymity_capture_value;
+		vector<GroupIterm> anonymity_capture_value;*/
 	public:
-		using ActionType = unordered_map < Edge::EdgeType, function<bool(const wstring& input, const int start,const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)> >;
+		using ActionType = unordered_map < Edge::EdgeType, function<bool(const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)> > ;
 	private:
 		static ActionType actions;
 	public:
@@ -94,14 +94,14 @@ namespace ztl
 
 		//DFA 匹配,从start开始,不移动start,看能否到达终结状态
 		//结果保存在save_stack.back()内
-		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const int start,const int end);
-			//NFA 匹配,从start开始,不移动start,看能否到达终结状态
-		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start,const int end);
-		
-		RegexMatchResult MatchSucced(const wstring& input);
+		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const int start, const int end);
+		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
+		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start, const int end);
+
+		RegexMatchResult MatchSucced(const wstring& input,vector<SaveState>& save_stack,RegexMatchResult& result);
 		RegexMatchResult MatchFailed();
 		int GetWCharIndex(const wchar_t character)const;
 	public:
-	//	bool RegexInterpretor::LookAroundAction(bool reverse, const wstring& input, const int begin, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)
+		//	bool RegexInterpretor::LookAroundAction(bool reverse, const wstring& input, const int begin, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)
 	};
 }
