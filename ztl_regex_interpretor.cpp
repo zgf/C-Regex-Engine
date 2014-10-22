@@ -4,13 +4,6 @@
 namespace ztl
 {
 	RegexInterpretor::ActionType RegexInterpretor::actions = RegexInterpretor::InitActions();
-	void RegexInterpretor::RightToLeft(wstring& input)
-	{
-		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
-		{
-			reverse(input.begin(), input.end());
-		}
-	}
 	RegexInterpretor::RegexInterpretor(const wstring& pattern, const Ptr<vector<RegexControl>>_optional)
 		:optional(_optional)
 
@@ -600,7 +593,7 @@ namespace ztl
 
 	RegexMatchResult RegexInterpretor::Match(const wstring& input, const int start )
 	{
-		if (find(optional->begin(),optional->end(),RegexControl::Multiline)!= optional->end())
+		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
 			wstring reverse_input;
 			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input,reverse_input.begin()));
@@ -615,7 +608,7 @@ namespace ztl
 	//从指定的起始位置开始，判断输入字符串中是否存在正则表达式的第一个匹配项
 	bool RegexInterpretor::IsMatch(const wstring& input, const int start )
 	{
-		if(find(optional->begin(), optional->end(), RegexControl::Multiline) != optional->end())
+		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
 			wstring reverse_input;
 			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input, reverse_input.begin()));
@@ -630,7 +623,7 @@ namespace ztl
 	//从字符串中的指定起始位置开始，在指定的输入字符串中搜索正则表达式的所有匹配项。
 	const vector<RegexMatchResult> RegexInterpretor::Matches(const wstring& input, int start )
 	{
-		if(find(optional->begin(), optional->end(), RegexControl::Multiline) != optional->end())
+		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
 			wstring reverse_input;
 			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input, reverse_input.begin()));
@@ -665,12 +658,11 @@ namespace ztl
 		{
 			auto left =input.begin() + positions[i];
 			auto right =input.begin()+ positions[i + 1];
+			des = copy(left, right, des);
 			if (left !=right)
 			{
-				des = copy(left, right, des);
 				des = copy(repalce.begin(), repalce.end(), des);
 			}
-			
 		}
 		return result;
 	}

@@ -82,7 +82,6 @@ namespace ztl
 		const vector<RegexMatchResult> 	Matches(const wstring& input, int start = 0);
 		wstring							Replace(const wstring& input, const wstring& repalce, int start=0);
 	private:
-		void RightToLeft(wstring& text);
 		//在start到end范围内寻找正则的第一个匹配
 		RegexMatchResult RegexMatchOne(const wstring& input, const int start, const int end);
 		//在start到end范围内寻找正则的全部匹配
