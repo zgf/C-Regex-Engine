@@ -22,7 +22,6 @@ namespace ztl
 		virtual void Visitor(Ptr<MacroExpression>& expression) = 0;
 		virtual void Visitor(Ptr<MacroReferenceExpression>& expression) = 0;
 		virtual void Visitor(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
-
 	};
 	template<typename ReturnType, typename ParameterType>
 	class RegexAlogrithm : public IRegexAlogrithm
@@ -55,7 +54,6 @@ namespace ztl
 		virtual ReturnType Apply(Ptr<MacroExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<MacroReferenceExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
-
 
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
@@ -643,8 +641,13 @@ namespace ztl
 		}
 		pair<State*, State*> Apply(Ptr<CaptureExpression>& expression)
 		{
+			auto index = 0;
+			if(expression->name.empty())
+			{
+				index = this->argument->capture_count++;
+			}
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewCaptureStates(substates, expression->name);
+			return this->argument->NewCaptureStates(substates, expression->name, index);
 		}
 		pair<State*, State*> Apply(Ptr<NoneCaptureExpression>& expression)
 		{
@@ -685,9 +688,8 @@ namespace ztl
 		pair<State*, State*> Apply(Ptr<MacroExpression>& expression)
 		{
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewRegexMacroStates(expression->name,substates);
+			return this->argument->NewRegexMacroStates(expression->name, substates);
 		}
-	
 	};
 	void Expression::BuildOrthogonal(Ptr<vector<int>>& target)
 	{
@@ -709,16 +711,16 @@ namespace ztl
 		BuildOrthogonal(charset);
 		charset->push_back(0);
 		charset->emplace_back(65535);
-	
+
 		sort(charset->begin(), charset->end());
 		charset->erase(unique(charset->begin(), charset->end()), charset->end());
 		if(find(optional->begin(), optional->end(), RegexControl::IgnoreCase) != optional->end())
 		{
 			auto&& length = charset->size();
-			for(size_t i = 0; i<length; ++i)
+			for(size_t i = 0; i < length; ++i)
 			{
 				auto&& char_iter = (*charset)[i];
-				if (char_iter <='z'&& char_iter>='a')
+				if(char_iter <= 'z'&& char_iter >= 'a')
 				{
 					charset->emplace_back(char_iter - 32);
 				}

@@ -90,7 +90,7 @@ namespace ztl
 				//会导致迭代器失效
 				tokens->push_back(tokens->back());
 			}
-			
+
 			RegexLex::SkipBlankSpace(pattern, index);
 			if(pattern[index] == '}')
 			{
@@ -182,16 +182,16 @@ namespace ztl
 		{
 			if(find(optional->begin(), optional->end(), RegexControl::ExplicitCapture) != optional->end())
 			{
-				RegexLex::ParseCapture(TokenType::NoneCapture, 1, pattern, index, tokens,optional);
+				RegexLex::ParseCapture(TokenType::NoneCapture, 1, pattern, index, tokens, optional);
 			}
 			else
 			{
-				RegexLex::ParseCapture(TokenType::CaptureBegin, 1, pattern, index, tokens,optional);
+				RegexLex::ParseCapture(TokenType::CaptureBegin, 1, pattern, index, tokens, optional);
 			}
 		} });
 		action_map.insert({ L"(?:", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::ParseCapture(TokenType::NoneCapture, 3, pattern, index, tokens,optional);
+			RegexLex::ParseCapture(TokenType::NoneCapture, 3, pattern, index, tokens, optional);
 		} });
 		//解析命名捕获组
 		action_map.insert({ L"(<", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
@@ -206,7 +206,7 @@ namespace ztl
 			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(<' action"));
 
 			auto index_begin = result + 1;
-			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens,optional);
+			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
 
 			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 			index = index_end + 1;
@@ -223,7 +223,7 @@ namespace ztl
 			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(?#<' action"));
 
 			auto index_begin = result + 1;
-			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens,optional);
+			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
 
 			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 			index = index_end + 1;
@@ -239,19 +239,19 @@ namespace ztl
 		} });
 		action_map.insert({ L"(?<=", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::ParseLookAround(TokenType::PositiveLookbehind, TokenType::LookbehindEnd, 4, pattern, index, tokens,optional);
+			RegexLex::ParseLookAround(TokenType::PositiveLookbehind, 4, pattern, index, tokens, optional);
 		} });
 		action_map.insert({ L"(?<!", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::ParseLookAround(TokenType::NegativeLookbehind, TokenType::LookbehindEnd, 4, pattern, index, tokens,optional);
+			RegexLex::ParseLookAround(TokenType::NegativeLookbehind, 4, pattern, index, tokens, optional);
 		} });
 		action_map.insert({ L"(?=", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::ParseLookAround(TokenType::PositivetiveLookahead, TokenType::LookaheadEnd, 3, pattern, index, tokens,optional);
+			RegexLex::ParseLookAround(TokenType::PositivetiveLookahead, 3, pattern, index, tokens, optional);
 		} });
 		action_map.insert({ L"(?!", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::ParseLookAround(TokenType::NegativeLookahead, TokenType::LookaheadEnd, 3, pattern, index, tokens,optional);
+			RegexLex::ParseLookAround(TokenType::NegativeLookahead, 3, pattern, index, tokens, optional);
 		} });
 		//选择
 		action_map.insert({ L"|", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
@@ -314,7 +314,7 @@ namespace ztl
 		} });
 		return move(action_map);
 	}
-	void RegexLex::CreatNewParsePattern(const wstring& pattern, int start, int end, Ptr<vector<RegexToken>>& tokens,const Ptr<vector<RegexControl>>& optional)
+	void RegexLex::CreatNewParsePattern(const wstring& pattern, int start, int end, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 	{
 		RegexLex lexer(pattern, optional);
 		auto&& result = lexer.ParsingPattern(start, end);
@@ -426,20 +426,20 @@ namespace ztl
 		tokens->emplace_back(RegexToken(type));
 		auto index_begin = index + offset;
 		auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
-		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens,optional);
+		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
 
 		tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 		index = index_end + 1;
 	}
 
-	void RegexLex::ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
+	void RegexLex::ParseLookAround(TokenType begin_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 	{
 		tokens->emplace_back(RegexToken(begin_type));
 		auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
 		auto index_begin = index + offset;
-		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens,optional);
+		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
 
 		index = index_end + 1;
-		tokens->emplace_back(RegexToken(end_type));
+		tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
 	}
 }

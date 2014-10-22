@@ -53,7 +53,7 @@ namespace ztl
 		static FirstMapType first_map;
 		static ActionType actions;
 		static LoopActionType loop_actions;
-		
+
 		Ptr<vector<RegexToken>>		tokens;
 		Ptr<Expression>				expression;
 		Ptr<CharTable>				char_table;

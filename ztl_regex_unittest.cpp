@@ -53,10 +53,10 @@ namespace ztl
 		assert(ExpectEqEx(L"(?#<bbb>a)$<bbb>", { { TokenType::RegexMacro }, { TokenType::Named, 4, 7 }, { TokenType::NormalChar, 8, 9 }, { TokenType::CaptureEnd }, { TokenType::MacroReference }, { TokenType::Named, 12, 15 } }));
 
 		//test零宽断言
-		assert(ExpectEq(L"(?<=ac)", { TokenType::PositiveLookbehind, TokenType::NormalChar, TokenType::NormalChar, TokenType::LookbehindEnd }));
-		assert(ExpectEq(L"(?<!a)", { TokenType::NegativeLookbehind, TokenType::NormalChar, TokenType::LookbehindEnd }));
-		assert(ExpectEq(L"(?=a)", { TokenType::PositivetiveLookahead, TokenType::NormalChar, TokenType::LookaheadEnd }));
-		assert(ExpectEq(L"(?!a)", { TokenType::NegativeLookahead, TokenType::NormalChar, TokenType::LookaheadEnd }));
+		assert(ExpectEq(L"(?<=ac)", { TokenType::PositiveLookbehind, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd }));
+		assert(ExpectEq(L"(?<!a)", { TokenType::NegativeLookbehind, TokenType::NormalChar, TokenType::CaptureEnd }));
+		assert(ExpectEq(L"(?=a)", { TokenType::PositivetiveLookahead, TokenType::NormalChar, TokenType::CaptureEnd }));
+		assert(ExpectEq(L"(?!a)", { TokenType::NegativeLookahead, TokenType::NormalChar, TokenType::CaptureEnd }));
 		//test 串首尾
 		assert(ExpectEq(L"$", { TokenType::StringTail }));
 		assert(ExpectEq(L"^", { TokenType::StringHead }));
@@ -213,157 +213,7 @@ namespace ztl
 			Capture(L"", One('a') |
 			(One('f') + PositiveLookbehind(One('s') + One('y')))))))));
 	}
-	void PrintENFA(ofstream& output, unordered_map<int, std::string>& signmap, const wstring& input)
-	{
-		static int cast_index = 0;
-		output << "TestCaseIndex:" << cast_index++ << endl;
-		output << "Input:" << ws2s(input) << endl;
-		auto optional = make_shared<vector<RegexControl>>();
-		optional->emplace_back(RegexControl::ExplicitCapture);
-		RegexLex lexer(input, optional);
-		lexer.ParsingPattern();
-		RegexParser parser(lexer, optional);
-		parser.RegexParsing();
-		auto&& machine = make_shared<AutoMachine>(parser);
-		machine->BuildOptimizeNFA();
-		auto& target = *machine;
-		vector<bool> marks(target.states->size());
-		auto&& state_list = target.states;
-		function<void(int current, const State* element)> functor;
-		auto find_functor = [&state_list](State* target)->int
-		{
-			for(size_t index = 0; index < state_list->size(); index++)
-			{
-				auto&& may_target = state_list->at(index).get();
-				if(may_target == target)
-				{
-					return index;
-				}
-			}
-			throw std::exception("can't find target!");
-		};
-		functor = [&functor, &output, &find_functor, &machine, &marks, &signmap, &state_list](int current, const State* element)
-		{
-			if(marks[current] == false)
-			{
-				marks[current] = true;
-				//	wcout << "Current Node Address:" <<element << endl;
-
-				for(auto&& iter : element->output)
-				{
-					/*	output << "		Edge Type:";
-						output << signmap[(int)(iter->type)].c_str() << endl;*/
-					//wcout << "	Edge Target Node Address:" << iter->target << endl;
-					/*if((int)(iter->type) == 0)
-					{
-					output << "Current Node index:" << current << endl;
-					output << "		Edge Type:";
-					output << signmap[(int)(iter->type)].c_str() << endl;
-					auto subindex = find_functor(iter->target);
-					functor(subindex, iter->target);
-					}*/
-					if((int)(iter->type) == 1 || (int)(iter->type) == 2)
-					{
-						output << "Current Node index:" << current << endl;
-						output << "		Edge Type:";
-						output << signmap[(int)(iter->type)].c_str() << endl;
-						auto name = any_cast<wstring>(iter->userdata);
-						auto& captures = *machine->captures;
-						auto subindex = find_functor(captures[name].first);
-						output << "Find Subexpression:" << endl;
-
-						functor(subindex, captures[name].first);
-						output << " Subexpression End" << endl;
-					}
-					else if((int)(iter->type) == 3)
-					{
-						output << "Current Node index:" << current << endl;
-						output << "		Edge Type:";
-						output << signmap[(int)(iter->type)].c_str() << endl;
-						output << "Find Subexpression:" << endl;
-
-						auto data = any_cast<Edge::LoopUserData>(iter->userdata);
-						auto& subexpression = *machine->subexpression;
-						auto subindex = find_functor(subexpression[data.index].first);
-						functor(subindex, subexpression[data.index].first);
-						output << " Subexpression End" << endl;
-					}
-					else if((int)(iter->type) == 7 || (int)(iter->type) == 8 || (int)(iter->type) == 9 || (int)(iter->type) == 10)
-					{
-						output << "Current Node index:" << current << endl;
-						output << "		Edge Type:";
-						output << signmap[(int)(iter->type)].c_str() << endl;
-						output << "Find Subexpression:" << endl;
-
-						auto loop_index = any_cast<int>(iter->userdata);
-						auto& subexpression = *machine->subexpression;
-						auto subindex = find_functor(subexpression[loop_index].first);
-						functor(subindex, subexpression[loop_index].first);
-						output << " Subexpression End" << endl;
-					}
-					else if((int)(iter->type) == 12 || (int)(iter->type) == 13)
-					{
-						output << "Current Node index:" << current << endl;
-						output << "		Edge Type:";
-						output << signmap[(int)(iter->type)].c_str() << endl;
-						auto name = any_cast<int>(iter->userdata) - 1;
-						auto& captures = *machine->anonymity_captures;
-						auto subindex = find_functor(captures[name].first);
-						output << "Find Subexpression:" << endl;
-
-						functor(subindex, captures[name].first);
-						output << " Subexpression End" << endl;
-					}
-					output << "Current Node index:" << current << endl;
-					output << "		Edge Type:";
-					output << signmap[(int)(iter->type)].c_str() << endl;
-					auto index = find_functor(iter->target);
-					output << "		Edge Target Node Index:" << index << endl;
-					functor(index, iter->target);
-				}
-			}
-		};
-		functor(find_functor(machine->nfa_expression->first)
-			, machine->nfa_expression->first);
-		output << "////////////////////////////////////////////////////////////////" << endl;
-	}
-	void TestENFA()
-	{
-		ofstream output("data.txt");
-		unordered_map<int, std::string> signmap;
-		signmap.insert({ 0, "Epsilon" });
-		signmap.insert({ 1, "Capture" });
-		signmap.insert({ 2, "BackReference" });
-		signmap.insert({ 3, "Loop" });
-		signmap.insert({ 4, "Char" });
-		signmap.insert({ 5, "Head" });
-		signmap.insert({ 6, "Tail" });
-		signmap.insert({ 7, "PositivetiveLookahead" });
-		signmap.insert({ 8, "NegativeLookahead" });
-		signmap.insert({ 9, "PositiveLookbehind" });
-		signmap.insert({ 10, "NegativeLookbehind" });
-		signmap.insert({ 11, "Final" }); //边后面是终结状态
-		signmap.insert({ 12, "AnonymityCapture" });
-		signmap.insert({ 12, "AnonymityBackReference" });
-		//PrintENFA(output, signmap, L"a");
-		//PrintENFA(output, signmap, L"ab");
-		//PrintENFA(output, signmap, L"a|a");
-		//PrintENFA(output, signmap, L"a|b");
-		//PrintENFA(output, signmap, L"(<one>a)\\k<one>");
-		//PrintENFA(output, signmap, L"$(?<=aa)");
-		//PrintENFA(output, signmap, L"(?!aa)");
-
-		//PrintENFA(output, signmap, L"^(?=aa)");
-		//PrintENFA(output, signmap, L"(?<!av)");
-		//PrintENFA(output, signmap, L"zh[^a-c]");
-		//PrintENFA(output, signmap, L"a|f(?<=sy)");
-		//PrintENFA(output, signmap, L"zh[^a-c]{3,4}(a|f(?<=sy))");
-		//PrintENFA(output, signmap, L"(^(?<!av))|(zh[^a-c]{3,4}(a|f(?<=sy)))");
-		//PrintENFA(output, signmap, L"ba?");
-		//PrintENFA(output, signmap, L"((\\d))");
-		PrintENFA(output, signmap, L"((3)\\-(3))");
-		output.close();
-	}
+	
 	void TestOptimize()
 	{
 		vector<wstring> TestList = {
@@ -402,10 +252,10 @@ namespace ztl
 			RegexInterpretor interpretor(pattern, optional);
 			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
 			std::cout << result.success << endl;
-		//	std::wcout << result.matched << endl;
+			//	std::wcout << result.matched << endl;
 			assert(result.success == true);
 			assert(result.start == matched_start);
-			assert(result.length == matched_end-matched_start);
+			assert(result.length == matched_end - matched_start);
 			assert(result.matched == matched_string);
 		};
 		auto&& TestCaseExpectFalse = [](const wstring& pattern, const wstring& input, const wstring& matched)
@@ -414,12 +264,12 @@ namespace ztl
 			optional->emplace_back(RegexControl::ExplicitCapture);
 			RegexInterpretor interpretor(pattern, optional);
 			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
-		//	std::wcout << result.matched << endl;
+			//	std::wcout << result.matched << endl;
 			assert(result.matched == matched);
 		};
 		wstring temp;
 		TestCaseExpectTrue(L"ab", L"abc", 0, 2, L"ab");
-		TestCaseExpectTrue(L"ab", L"cabc", 1,3, L"ab");
+		TestCaseExpectTrue(L"ab", L"cabc", 1, 3, L"ab");
 		TestCaseExpectTrue(L"a", L"abc", 0, 1, L"a");
 		TestCaseExpectTrue(L"a", L"bca", 2, 3, L"a");
 		TestCaseExpectTrue(L"a|b", L"bcd", 0, 1, L"b");
@@ -436,7 +286,7 @@ namespace ztl
 
 		TestCaseExpectTrue(L"ba?", L"baabb", 0, 2, L"ba");
 		TestCaseExpectTrue(L"ba?", L"bb", 0, 1, L"b");
-		//TestCaseExpectTrue(L"(a*)*", L"na", 1, 2, L"a");
+		TestCaseExpectTrue(L"(a*)*", L"na", 1, 2, L"a");
 
 		TestCaseExpectTrue(L"[a-f]", L"gag", 1, 2, L"a");
 		TestCaseExpectTrue(L"[a-f]", L"gdasd", 1, 2, L"d");
@@ -444,7 +294,7 @@ namespace ztl
 		TestCaseExpectTrue(L"[a-f]*", L"gdfdasdas", 1, 5, L"dfda");
 		TestCaseExpectTrue(L"[^a-f]", L"gdasd", 0, 1, L"g");
 		TestCaseExpectTrue(L"\\d", L"321312", 0, 1, L"3");
-		//TestCaseExpectTrue(L"((3)-(3))", L"3-3", 0,3, L"3-3");
+		TestCaseExpectTrue(L"((3)-(3))", L"3-3", 0, 3, L"3-3");
 		TestCaseExpectTrue(L"(\\d)", L"2", 0, 1, L"2");
 		temp = L"qq.";
 		TestCaseExpectTrue(LR"(\w+([\-.]\w+)*\.)", temp, 0, temp.size(), temp);
@@ -457,7 +307,7 @@ namespace ztl
 		temp = L".com";
 		TestCaseExpectTrue(LR"(\.\w+([\-.]\w+)*)", temp, 0, temp.size(), temp);
 		temp = L"ss";
-		TestCaseExpectTrue(LR"(s+s)", temp, 0, temp.size(),temp);
+		TestCaseExpectTrue(LR"(s+s)", temp, 0, temp.size(), temp);
 		temp = L".q.";
 		TestCaseExpectTrue(LR"(([.]\w+)*\.)", temp, 0, temp.size(), temp);
 		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"601519305@qq.com", 0, 16, L"601519305@qq.com");
@@ -466,16 +316,14 @@ namespace ztl
 		//
 		TestCaseExpectTrue(LR"(\d{3}-\d{8}|\d{4}-(\d{7}|\d{8}))", L"010-12345678", 0, 12, L"010-12345678");
 		TestCaseExpectTrue(LR"([0369]*(([147][0369]*|[258][0369]*[258][0369]*)([147][0369]*[258][0369]*)*([258][0369]*|[147][0369]*[147][0369]*)|[258][0369]*[147][0369]*)*)", L"990", 0, 3, L"990");
-		temp = L"31";
-		//TestCaseExpectTrue(L"(3)|31", temp, 0, 1, L"3");
 
 		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"01", 0, 2, L"01");
 		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"09", 0, 2, L"09");
 		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"1", 0, 1, L"1");
 		TestCaseExpectTrue(LR"(31|30|((0?[1-9])|((1|2)[0-9])))", L"31", 0, 2, L"31");
-		TestCaseExpectTrue(LR"([\-+]?\d+(\.\d+)?)",L"-9.90",0,5,L"-9.90");
-		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L"67-99",L"67");
-		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)",L".6",L"6");
+		TestCaseExpectTrue(LR"([\-+]?\d+(\.\d+)?)", L"-9.90", 0, 5, L"-9.90");
+		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L"67-99", L"67");
+		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L".6", L"6");
 		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"100", 0, 3, L"100");
 		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"12", 0, 2, L"12");
 		TestCaseExpectFalse(LR"((0|[1-9]\d*))", L"01", L"0");
@@ -492,16 +340,147 @@ namespace ztl
 		TestCaseExpectTrue(LR"([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})", temp, 0, temp.size(), temp);
 		temp = L"#FF0000";
 		TestCaseExpectTrue(LR"(#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?)", temp, 0, temp.size(), temp);
+	}
+	void TestRegexMatchOneNFA()
+	{
+		auto&& TestCaseExpectTrue = [](const wstring& pattern, const wstring& input, const int matched_start, const int matched_end, const wstring& matched_string)
+		{
+			auto optional = make_shared<vector<RegexControl>>();
+			RegexInterpretor interpretor(pattern, optional);
+			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
+			std::cout << result.success << endl;
+			//	std::wcout << result.matched << endl;
+			assert(result.success == true);
+			assert(result.start == matched_start);
+			assert(result.length == matched_end - matched_start);
+			assert(result.matched == matched_string);
+		};
+		auto&& TestCaseExpectFalse = [](const wstring& pattern, const wstring& input, const wstring& matched)
+		{
+			auto optional = make_shared<vector<RegexControl>>();
+			RegexInterpretor interpretor(pattern, optional);
+			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
+			//	std::wcout << result.matched << endl;
+			assert(result.matched == matched);
+		};
 
+		//DFA基本功能以及匿名捕获
+		wstring temp;
+		TestCaseExpectTrue(L"ab", L"abc", 0, 2, L"ab");
+		TestCaseExpectTrue(L"ab", L"cabc", 1, 3, L"ab");
+		TestCaseExpectTrue(L"a", L"abc", 0, 1, L"a");
+		TestCaseExpectTrue(L"a", L"bca", 2, 3, L"a");
+		TestCaseExpectTrue(L"a|b", L"bcd", 0, 1, L"b");
+		TestCaseExpectTrue(L"a|b", L"acd", 0, 1, L"a");
+		TestCaseExpectTrue(L"a|b", L"cabd", 1, 2, L"a");
+
+		TestCaseExpectTrue(L"a*", L"aaa", 0, 3, L"aaa");
+		TestCaseExpectTrue(L"a*", L"bbbaaabb", 3, 6, L"aaa");
+		TestCaseExpectTrue(L"a*", L"bbbaaa", 3, 6, L"aaa");
+
+		TestCaseExpectTrue(L"a+", L"aabb", 0, 2, L"aa");
+		TestCaseExpectTrue(L"a+", L"baabb", 1, 3, L"aa");
+		TestCaseExpectTrue(L"a+", L"baa", 1, 3, L"aa");
+
+		TestCaseExpectTrue(L"ba?", L"baabb", 0, 2, L"ba");
+		TestCaseExpectTrue(L"ba?", L"bb", 0, 1, L"b");
+		TestCaseExpectTrue(L"a*?" ,L"naa", 1, 2, L"a");
+		TestCaseExpectTrue(L"na+?", L"naa", 0, 2, L"na");
+		TestCaseExpectTrue(L"na*?", L"n", 0, 1, L"n");
+		TestCaseExpectTrue(L"na??", L"n", 0, 1, L"n");
+		TestCaseExpectTrue(L"na{2,}", L"naaa", 0, 4, L"naaa");
+		TestCaseExpectTrue(L"na{2,}?", L"naa", 0, 3, L"naa");
+		TestCaseExpectTrue(L"a3{0,1}?", L"a33333", 0, 1, L"a");
+		TestCaseExpectTrue(L"(a*)*", L"na", 1, 2, L"a");
+		TestCaseExpectTrue(L"3{3,4}?", L"33333", 0, 3, L"333");
+		TestCaseExpectTrue(L"\\d{3,4}", L"321312", 0, 4, L"3213");
+
+		TestCaseExpectTrue(L"[a-f]", L"gag", 1, 2, L"a");
+		TestCaseExpectTrue(L"[a-f]", L"gdasd", 1, 2, L"d");
+		TestCaseExpectTrue(L"[a-f]", L"f", 0, 1, L"f");
+		TestCaseExpectTrue(L"[a-f]*", L"gdfdasdas", 1, 5, L"dfda");
+		TestCaseExpectTrue(L"[^a-f]", L"gdasd", 0, 1, L"g");
+		TestCaseExpectTrue(L"\\d", L"321312", 0, 1, L"3");
+		TestCaseExpectTrue(L"((<one>3)-(<two>3))", L"3-3", 0, 3, L"3-3");
+
+		//后向引用
+		TestCaseExpectTrue(L"((<one>3)-(<two>4))\\k<one>\\k<two>", L"3-434", 0, 5, L"3-434");
+		TestCaseExpectTrue(L"((3)-(4))\\2\\3", L"3-434", 0, 5, L"3-434");
+		TestCaseExpectTrue(L"((<one>3)-(4))\\k<one>\\2", L"3-434", 0, 5, L"3-434");
+		temp = L"q.";
+
+		TestCaseExpectTrue(LR"(q(<one>d)*\.\k<one>)", temp, 0, temp.size(), temp);
+
+		TestCaseExpectTrue(L"(\\d)", L"2", 0, 1, L"2");
+		temp = L"qq.";
+		TestCaseExpectTrue(LR"(\w+(<one>[\-.]\w+)*\.\k<one>)", temp, 0, temp.size(), temp);
+		
+		
+		//LookAround
+		temp = L"3354";
+		TestCaseExpectTrue(LR"(33(?=5)54)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(33(?!2)54)", temp, 0, temp.size(), temp);
+
+		TestCaseExpectTrue(LR"(33(?<=3)54)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(33(?<!2)54)", temp, 0, temp.size(), temp);
+
+		//正则宏
+		//(?#<name>expression)
+		TestCaseExpectTrue(LR"((?#<name1>([\-.]\w+)*)(?#<name>\w+$<name1>)$<name>)", temp, 0, temp.size(), temp);
+
+		temp = L"qq";
+		TestCaseExpectTrue(LR"(\w+([\-.]\w+)*)", temp, 0, temp.size(), temp);
+		temp = L"601519305@";
+		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@)", temp, 0, temp.size(), temp);
+		temp = L"601519305";
+		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*)", temp, 0, temp.size(), temp);
+		temp = L".com";
+		TestCaseExpectTrue(LR"(\.\w+([\-.]\w+)*)", temp, 0, temp.size(), temp);
+		temp = L"ss";
+		TestCaseExpectTrue(LR"((<ho>s+s))", temp, 0, temp.size(), temp);
+		temp = L".q.";
+		TestCaseExpectTrue(LR"(([.]\w+)*\.)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"601519305@qq.com", 0, 16, L"601519305@qq.com");
+		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"aaa@msn.com", 0, 11, L"aaa@msn.com");
+
+		//
+		TestCaseExpectTrue(LR"(\d{3}-\d{8}|\d{4}-(\d{7}|\d{8}))", L"010-12345678", 0, 12, L"010-12345678");
+		TestCaseExpectTrue(LR"([0369]*(([147][0369]*|[258][0369]*[258][0369]*)([147][0369]*[258][0369]*)*([258][0369]*|[147][0369]*[147][0369]*)|[258][0369]*[147][0369]*)*)", L"990", 0, 3, L"990");
+		temp = L"31";
+		TestCaseExpectTrue(L"(3)|31", temp, 0, 1, L"3");
+
+		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"01", 0, 2, L"01");
+		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"09", 0, 2, L"09");
+		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"1", 0, 1, L"1");
+		TestCaseExpectTrue(LR"(31|30|((0?[1-9])|((1|2)[0-9])))", L"31", 0, 2, L"31");
+		TestCaseExpectTrue(LR"([\-+]?\d+(\.\d+)?)", L"-9.90", 0, 5, L"-9.90");
+		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L"67-99", L"67");
+		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L".6", L"6");
+		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"100", 0, 3, L"100");
+		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"12", 0, 2, L"12");
+		TestCaseExpectFalse(LR"((0|[1-9]\d*))", L"01", L"0");
+		TestCaseExpectTrue(LR"(钟轩*)", L"钟轩轩", 0, 3, L"钟轩轩");
+		//////
+		TestCaseExpectTrue(LR"(13[0-9]{1}[0-9]{8}|15[9]{1}[0-9]{8})", L"13910615960", 0, 11, L"13910615960");
+		TestCaseExpectFalse(LR"(13[0-9]{1}[0-9]{8}|15[9]{1}[0-9]{8})", L"14010615960", L"");
+
+		TestCaseExpectTrue(LR"((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9]))", L"192.168.0.1", 0, 11, L"192.168.0.1");
+		TestCaseExpectTrue(LR"((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9]))", L"222.234.1.4", 0, 11, L"222.234.1.4");
+		temp = L"baidu.com";
+		TestCaseExpectTrue(LR"([a-zA-Z0-9]+([a-zA-Z0-9\-\.]+)?\.(com|org|net|cn|com\.cn|edu\.cn|grv\.cn))", temp, 0, temp.size(), L"baidu.com");
+		temp = L"2064d355-c0b9-41d8-9ef7-9d8b26524751";
+		TestCaseExpectTrue(LR"([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})", temp, 0, temp.size(), temp);
+		temp = L"#FF0000";
+		TestCaseExpectTrue(LR"(#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?)", temp, 0, temp.size(), temp);
 	}
 
 	void TestAllComponent()
 	{
-		//TestLexer();
-		//TestParserUnCrash();
-		//TestParserTree();
-		//TestENFA();
+		TestLexer();
+		TestParserUnCrash();
+		TestParserTree();
 		TestRegexMatchOneDFA();
-		//	TestOptimize();
+		TestRegexMatchOneNFA();
+			TestOptimize();
 	}
 }

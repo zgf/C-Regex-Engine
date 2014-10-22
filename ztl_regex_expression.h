@@ -239,7 +239,7 @@ namespace ztl
 		}
 		void Apply(IRegexAlogrithm& algorithm);
 	};
-	
+
 	class NegativeLookbehindExpression : public Expression
 	{
 	public:

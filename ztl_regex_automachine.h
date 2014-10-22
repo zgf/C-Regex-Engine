@@ -5,8 +5,6 @@
 
 namespace ztl
 {
-	
-
 	//自动机
 	//构造非空NFA.
 	class AutoMachine
@@ -14,21 +12,23 @@ namespace ztl
 	public:
 		using StatesType = pair < State*, State* > ;
 		Ptr<Expression>							ast;
-		Ptr<unordered_map<wstring, StatesType>> captures;
-		Ptr<unordered_map<wstring, DFA>>		dfa_captures;
-		Ptr<vector<StatesType>>					anonymity_captures;//匿名捕获组
-		Ptr<unordered_map<int, DFA>>			dfa_anonymity_captures;
+		unordered_map<wstring, StatesType> captures;
+		unordered_map<wstring, DFA>		dfa_captures;
+		unordered_map<int, DFA>			dfa_anonymity_captures;
 
-		Ptr<vector<StatesType>>					subexpression;//用在几个lookaround上
-		Ptr<unordered_map<int, DFA>>			dfa_subexpression;
+		vector<StatesType>			subexpression;//用在几个lookaround上
+		unordered_map<int, DFA>			dfa_subexpression;
 
 		Ptr<CharTable>							table;
-		Ptr<vector<Ptr<State>>>					states;
-		Ptr<vector<Ptr<Edge>>>					edges;
+		vector<Ptr<State>>					states;
+		vector<Ptr<Edge>>					edges;
 		unordered_map<wstring, StatesType>		macro_expression;//宏表达式
 		int										capture_count = 0;//捕获组计数
 		Ptr<AutoMachine::StatesType>			nfa_expression;
 		Ptr<DFA>								dfa_expression;
+		vector<pair<AutoMachine::StatesType, int>> anonymity_captures;//待匿名捕获组
+		//包含该状态的子表达式不进行DFA优化
+		vector<State*> non_dfa;
 	public:
 		AutoMachine() = delete;
 		AutoMachine(RegexParser& parser);
@@ -39,7 +39,7 @@ namespace ztl
 		AutoMachine::StatesType NewCharSetStates(const bool reverse, const vector<CharRange>& range);
 		AutoMachine::StatesType NewAlterStates(StatesType& left, StatesType& right);
 		AutoMachine::StatesType NewBeinAndEndStates(const Edge::EdgeType& type);
-		AutoMachine::StatesType NewCaptureStates(StatesType& substates, const wstring& name);
+		AutoMachine::StatesType NewCaptureStates(StatesType& substates, const wstring& name, const int index);
 		AutoMachine::StatesType NewBackReferenceStates(const wstring& name);
 		AutoMachine::StatesType NewAnonymityBackReferenceBackReferenceStates(const int& index);
 		AutoMachine::StatesType NewRegexMacroStates(const wstring& name, StatesType& substates);
@@ -48,7 +48,7 @@ namespace ztl
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
-		AutoMachine::StatesType NewChooseClourseStates(bool greedy,StatesType& target);
+		AutoMachine::StatesType NewChooseClourseStates(bool greedy, StatesType& target);
 		AutoMachine::StatesType NewPositiveClourseStates(bool greedy, StatesType& target);
 		AutoMachine::StatesType NewKleenClourseStates(bool greedy, StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& target, int number);
@@ -56,24 +56,25 @@ namespace ztl
 		vector<AutoMachine::StatesType> NewStateSequence(StatesType& target, int number);
 
 		AutoMachine::StatesType AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& loop_head, int number);
-		AutoMachine::StatesType AutoMachine::LoopIncludeInFinite(bool greedy, int number,AutoMachine::StatesType& substates);
+		AutoMachine::StatesType AutoMachine::LoopIncludeInFinite(bool greedy, int number, AutoMachine::StatesType& substates);
 		//创建同构图
 		AutoMachine::StatesType NewIsomorphicGraph(StatesType& target);
 
 		//添加Final并且创建DFA
 		void AddFinalAndCreatDFA(AutoMachine::StatesType& subexpress);
 		//搜索可到达Target节点的节点集合
-		unordered_set<State*> FindReachTargetStateSet(State* start,State* target);
+		unordered_set<State*> FindReachTargetStateSet(State* start, State* target);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type = Edge::EdgeType::Epsilon);
 		void ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata);
 		void ConnetWith(State*& start, State*& end, const Edge::EdgeType& type, const any& userdata);
 		void AutoMachine::BuildOptimizeNFA();
+		void SetAnonymityCaptures();
 		AutoMachine::StatesType EpsilonNFAtoNFA(const AutoMachine::StatesType& target);
 		void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, vector< unordered_set<State*>>& edge_nfa_map, const int final_index);
-		void CreatDFAStateByEdgeToNFAMap(unordered_map<int, unordered_set<State*>>& edge_nfa_map, unordered_map<unordered_set<State*>, int>& nfa_dfa_map, int& front, vector<vector<int>>& dfa_table, vector<unordered_set<State*>>& dfa_nfa_map, const int edge_sum, deque<int>& dfaqueue);
+		
 	private:
-		void GetTableIndex(const CharRange& target,vector<int>& range)const;
+		void GetTableIndex(const CharRange& target, vector<int>& range)const;
 		int GetTableIndex(const int& target)const;
 		AutoMachine::StatesType NewStates();
 		State* NewOneState();

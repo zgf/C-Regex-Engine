@@ -95,7 +95,7 @@ namespace ztl
 		顺序否定环视，表示所在位置右侧不能匹配Expression
 		*/
 
-		static void ParseLookAround(TokenType begin_type, TokenType end_type, int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens,const Ptr<vector<RegexControl>>& optional);
+		static void ParseLookAround(TokenType begin_type,  int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens,const Ptr<vector<RegexControl>>& optional);
 	public:
 		static RegexLex::ActionType RegexLex::InitActionMap();
 	};

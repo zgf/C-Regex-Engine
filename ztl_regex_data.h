@@ -82,8 +82,8 @@ namespace ztl
 		NegativeLookahead,
 		PositiveLookbehind,
 		NegativeLookbehind,
-		LookaheadEnd,
-		LookbehindEnd,
+		//LookaheadEnd,
+		//LookbehindEnd,
 		Alternation,
 		//新功能
 		RegexMacro,//(?#<name>expression)
@@ -166,10 +166,7 @@ namespace ztl
 			Final, //边后面是终结状态
 			AnonymityCapture,
 			AnonymityBackReference,
-			Jump,//无条件转移边和final差不多,只是不会匹配时被放到最后
-			JumpByTime,//通过测试Time次 any pair<int,int> index,number
-			JumpByTest,//通过测试  any int index
-			//MarcoReference,NFA阶段被扩展
+		
 		};
 		struct LoopUserData
 		{
@@ -191,7 +188,6 @@ namespace ztl
 			{
 				return !this->operator==(target);
 			}
-		
 		};
 	public:
 		EdgeType type;

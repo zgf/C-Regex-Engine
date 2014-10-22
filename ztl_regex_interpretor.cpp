@@ -27,7 +27,8 @@ namespace ztl
 	{
 		auto length = expect_value.size();
 		auto&& real_value = input.substr(input_index, length);
-		if(expect_value == real_value)
+		
+		if(real_value==expect_value)
 		{
 			save.length = length;
 			input_index += length;
@@ -110,112 +111,10 @@ namespace ztl
 
 		actions.insert({ Edge::EdgeType::Final, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
-
 			save_stack.back().length = 0;
 			return true;
 		} });
-		//actions.insert({ Edge::EdgeType::Jump, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
-		//{
-		//	save_stack.back().length = 0;
-		//	return true;
-		//} });
-		//actions.insert({ Edge::EdgeType::JumpByTest, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
-		//{
-		//	auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-		//	if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_subexpression->end())
-		//	{
-		//		auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
-		//		SaveState dfasave;
-		//		auto&& result = interpretor.DFAMatch(subdfa, dfasave, input, input_index, end);
-		//		if(result == true)
-		//		{
-		//			save_stack.back().length = dfasave.length;
-		//			input_index += save_stack.back().length;
-		//			return true;
-		//		}
-		//		else
-		//		{
-		//			save_stack.back().length = 0;
-		//			return false;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		auto& subexpression = (*interpretor.machine->subexpression)[index];
-		//		auto&& result = interpretor.NFAMatch(subexpression, input, input_index, end);
-		//		if(result.success == true)
-		//		{
-		//			//interpretor.anonymity_capture_value[index].content = result.matched;
-		//			//interpretor.anonymity_capture_value[index].position = result.start;
-		//			//interpretor.anonymity_capture_value[index].length = result.length;
-		//			interpretor.anonymity_capture_value.insert(interpretor.anonymity_capture_value.end(), result.anonymity_group.begin(), result.anonymity_group.end());
-		//			save.length = result.length;
-		//			input_index += save.length;
-		//			return true;
-		//		}
-		//		else
-		//		{
-		//			save.length = 0;
-		//			return false;
-		//		}
-		//	}
-		//} });
-		//actions.insert({ Edge::EdgeType::JumpByTime, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
-		//{
-		//	auto user_pair = any_cast<pair<int, int>>(save.states->output[save.edge_index]->userdata);
-		//	auto index = user_pair.first;
-		//	auto number = user_pair.second;
-		//	if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_subexpression->end())
-		//	{
-		//		auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
-		//		auto end_index = input_index;
-		//		for(auto i = 0; i < number; i++)
-		//		{
-		//			SaveState dfasave;
-		//			auto&& result = interpretor.DFAMatch(subdfa, dfasave, input, end_index, end);
-		//			if(result == true)
-		//			{
-		//				end_index += dfasave.length;
-		//			}
-		//			else
-		//			{
-		//				dfasave.length = 0;
-		//				return false;
-		//			}
-		//		}
-		//		save.length = end_index - input_index;
-		//		input_index = end_index;
-		//		return true;
-		//	}
-		//	else
-		//	{
-		//		auto& subexpression = (*interpretor.machine->subexpression)[index];
-		//		vector<GroupIterm> temp;
-		//		auto sum_length = 0;
-		//		auto end_index = input_index;
-		//		for(auto i = 0; i < number; i++)
-		//		{
-		//			auto&& result = interpretor.NFAMatch(subexpression, input, input_index, end);
-		//			if(result.success == true)
-		//			{
-		//				temp[index].content = result.matched;
-		//				temp[index].position = result.start;
-		//				temp[index].length = result.length;
-		//				temp.insert(temp.end(), result.anonymity_group.begin(), result.anonymity_group.end());
-		//				sum_length += result.length;
-		//			}
-		//			else
-		//			{
-		//				save.length = 0;
-		//				return false;
-		//			}
-		//		}
-		//		interpretor.anonymity_capture_value.insert(interpretor.anonymity_capture_value.end(), temp.begin(), temp.end());
-		//		input_index += sum_length;
-		//		save.length = sum_length;
-		//		return true;
-		//	}
-		//} });
+		
 		actions.insert({ Edge::EdgeType::Head, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			if(input_index == start)
@@ -259,21 +158,22 @@ namespace ztl
 		{
 			auto&& name = any_cast<wstring>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
 			auto& expect_value = result.group[name].content;
+			
 			return BackReferenceAction(input, input_index, save_stack.back(), expect_value);
 		} });
 		actions.insert({ Edge::EdgeType::AnonymityBackReference, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			auto&& name = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
+			name -= 1;
 			auto& expect_value = result.anonymity_group[name].content;
 			return BackReferenceAction(input, input_index, save_stack.back(), expect_value);
 		} });
 		actions.insert({ Edge::EdgeType::Capture, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			auto name = any_cast<wstring>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-
-			if(interpretor.machine->dfa_captures->find(name) != interpretor.machine->dfa_captures->end())
+			if(interpretor.machine->dfa_captures.find(name) != interpretor.machine->dfa_captures.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_captures)[name];
+				auto subdfa = interpretor.machine->dfa_captures[name];
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, input_index, end);
 				if(find_result == true)
 				{
@@ -291,11 +191,13 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->captures)[name];
+				auto& subexpression = interpretor.machine->captures[name];
 				auto&& find_result = interpretor.NFAMatch(subexpression, input, input_index, end);
 				if(find_result.success == true)
 				{
 					result.group = move(find_result.group);
+					result.anonymity_group = move(find_result.anonymity_group);
+
 					result.group[name].content = find_result.matched;
 					result.group[name].position = find_result.start;
 					result.group[name].length = find_result.length;
@@ -314,10 +216,9 @@ namespace ztl
 		actions.insert({ Edge::EdgeType::AnonymityCapture, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			int name = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-			name -= 1;
-			if(interpretor.machine->dfa_anonymity_captures->find(name) != interpretor.machine->dfa_anonymity_captures->end())
+			if(interpretor.machine->dfa_anonymity_captures.find(name) != interpretor.machine->dfa_anonymity_captures.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_anonymity_captures)[name];
+				auto subdfa = interpretor.machine->dfa_anonymity_captures[name];
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, input_index, end);
 				if(find_result == true)
 				{
@@ -335,11 +236,12 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->anonymity_captures)[name];
-				auto&& find_result = interpretor.NFAMatch(subexpression, input, input_index, end);
+				auto& subexpression = interpretor.machine->anonymity_captures[name];
+				auto&& find_result = interpretor.NFAMatch(subexpression.first, input, input_index, end);
 				if(find_result.success == true)
 				{
-					
+					result.group = move(find_result.group);
+
 					result.anonymity_group = move(find_result.anonymity_group);
 					result.anonymity_group[name].content = find_result.matched;
 					result.anonymity_group[name].position = find_result.start;
@@ -367,9 +269,9 @@ namespace ztl
 		actions.insert({ Edge::EdgeType::PositivetiveLookahead, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-			if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_anonymity_captures->end())
+			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
+				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = input_index;
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, current_input_index, end);
 				if(find_result == true)
@@ -385,7 +287,7 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->subexpression)[index];
+				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = input_index;
 				auto&& find_result = interpretor.NFAMatch(subexpression, input, current_input_index, end);
 				if(find_result.success == true)
@@ -406,9 +308,9 @@ namespace ztl
 			wstring temp_input = input.substr(start, input_index);
 			reverse(temp_input.begin(), temp_input.end());
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-			if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_anonymity_captures->end())
+			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
+				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, end);
 				if(find_result == true)
@@ -424,7 +326,7 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->subexpression)[index];
+				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = 0;
 				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, end);
 				if(find_result.success == true)
@@ -460,9 +362,9 @@ namespace ztl
 			wstring temp_input = input.substr(start, input_index);
 			reverse(temp_input.begin(), temp_input.end());
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-			if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_anonymity_captures->end())
+			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
+				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, end);
 				if(find_result == false)
@@ -478,7 +380,7 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->subexpression)[index];
+				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = 0;
 				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, end);
 				if(find_result.success == false)
@@ -496,9 +398,9 @@ namespace ztl
 		actions.insert({ Edge::EdgeType::NegativeLookahead, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-			if(interpretor.machine->dfa_subexpression->find(index) != interpretor.machine->dfa_anonymity_captures->end())
+			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
-				auto subdfa = (*interpretor.machine->dfa_subexpression)[index];
+				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = input_index;
 				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, current_input_index, end);
 				if(find_result == false)
@@ -514,7 +416,7 @@ namespace ztl
 			}
 			else
 			{
-				auto& subexpression = (*interpretor.machine->subexpression)[index];
+				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = input_index;
 				auto&& find_result = interpretor.NFAMatch(subexpression, input, current_input_index, end);
 				if(find_result.success == false)
@@ -649,9 +551,37 @@ namespace ztl
 		//设置进入时栈深度
 		vector<SaveState> state_stack;
 		state_stack.emplace_back(SaveState());
-		result.anonymity_group.resize(machine->anonymity_captures->size());
-		while(current_state != nfa.second)
+		result.anonymity_group.resize(machine->anonymity_captures.size());
+		while(true)
 		{
+			if(current_state == nfa.second)
+			{
+				//assert(current_state == nfa.second);
+
+				state_stack.pop_back();
+				//assert(!state_stack.empty());
+				auto sumlength = 0;
+				for(auto&& element : state_stack)
+				{
+					sumlength += element.length;
+				}
+				if(sumlength != 0)
+				{
+					result.length = sumlength;
+					result.start = state_stack.front().input_index;
+					result.matched = input.substr(result.start, result.length);
+					result.success = true;
+					return result;
+				}
+				else if(!state_stack.empty())
+				{
+					is_new_state = false;
+				}
+				else
+				{
+					return MatchFailed();
+				}
+			}
 			auto& save = state_stack.back();
 			//设置save和各个变量状态
 			SetState(is_new_state, save, current_edge_index, current_input_index, current_state);
@@ -659,7 +589,7 @@ namespace ztl
 			for(; current_edge_index < current_state->output.size(); current_edge_index++)
 			{
 				//遇到final,final如果不是最后把final放到最后去
-				PutFinalInListEnd(current_state, current_edge_index);
+				//PutFinalInListEnd(current_state, current_edge_index);
 
 				save.edge_index = current_edge_index;
 
@@ -688,9 +618,6 @@ namespace ztl
 		LoopEnd:;
 		}
 
-		assert(current_state == nfa.second);
-
-		return MatchSucced(input,state_stack,result);
 	}
 
 	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, const int start, const int end)
@@ -735,14 +662,14 @@ namespace ztl
 		while(next_start_index < input.size())
 		{
 			auto match_result = RegexMatchOne(input, next_start_index, end);
-			if (match_result.success == true)
+			if(match_result.success == true)
 			{
 				next_start_index = result.back().start + result.back().length;
 				result.emplace_back(move(match_result));
 			}
 			else
 			{
-				next_start_index +=1;
+				next_start_index += 1;
 			}
 		}
 		return result;

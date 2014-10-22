@@ -10,9 +10,8 @@ namespace ztl
 	{
 	}
 	RegexParser::RegexParser(const RegexLex& lexer, const Ptr<vector<RegexControl>>& _optional)
-		:optional(_optional), tokens(lexer.GetTokens()), pattern(lexer.GetRawString()), expression(nullptr), char_table(make_shared<CharTable>())
+		: optional(_optional), tokens(lexer.GetTokens()), pattern(lexer.GetRawString()), expression(nullptr), char_table(make_shared<CharTable>())
 	{
-
 	}
 	RegexParser::FirstMapType RegexParser::InitFirstMap()
 	{
@@ -108,7 +107,6 @@ namespace ztl
 			auto&& count = element.max - element.min + 1;
 			fill_n(current_iter, move(count), i);
 			current_iter += count;
-
 		}
 		return move(result);
 	}
@@ -180,12 +178,12 @@ namespace ztl
 		return move(loop_actions);
 	}
 	template<typename Type>
-	Ptr<Expression> LookAround(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const TokenType end_type, int& index, Type)
+	Ptr<Expression> LookAround(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens,  int& index, Type)
 	{
 		auto end_index = index;
 		index += 1;
 		auto&& current_type = tokens->at(end_index).type;
-		while(current_type != end_type)
+		while(current_type != TokenType::CaptureEnd)
 		{
 			end_index += 1;
 			current_type = tokens->at(end_index).type;
@@ -215,17 +213,17 @@ namespace ztl
 		return make_shared<AnonymityBackReferenceExpression>(number);
 	}
 	//进来时已经去掉了最外层的(括号,找到匹配的最外层的)括号
-	int FindTheLongestCaptureEnd(const Ptr<vector<RegexToken>>& tokens,const int index)
+	int FindTheLongestCaptureEnd(const Ptr<vector<RegexToken>>& tokens, const int index)
 	{
 		int count = 1;
 		for(auto i = index; i < tokens->size(); i++)
 		{
 			auto& type = (*tokens)[i].type;
-			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin||type == TokenType::NoneCapture||type == TokenType::RegexMacro)
+			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin || type == TokenType::NoneCapture || type == TokenType::RegexMacro)
 			{
 				count++;
 			}
-			else if(type == TokenType::CaptureEnd)
+			else if(type == TokenType::CaptureEnd/*||type == TokenType::LookaheadEnd||type == TokenType::LookbehindEnd*/)
 			{
 				count--;
 			}
@@ -239,7 +237,7 @@ namespace ztl
 	Ptr<Expression> RegexParser::NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		
+
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 		auto&& exp = Alter(pattern, tokens, index, end_index);
 		auto&& result = make_shared<NoneCaptureExpression>(exp);
@@ -249,7 +247,7 @@ namespace ztl
 	Ptr<Expression> RegexParser::RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		
+
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
 		wstring name = Named(pattern, tokens, index);
@@ -333,7 +331,7 @@ namespace ztl
 		actions.insert({ TokenType::BackReference, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			return BackReference(pattern, tokens, index);
-		} }); 
+		} });
 		actions.insert({ TokenType::AnonymityBackReference, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			return AnonymityBackReference(pattern, tokens, index);
@@ -348,19 +346,19 @@ namespace ztl
 
 		actions.insert({ TokenType::PositiveLookbehind, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
-			return LookAround(pattern, tokens, TokenType::LookbehindEnd, index, PositiveLookbehindExpression());
+			return LookAround(pattern, tokens, index, PositiveLookbehindExpression());
 		} });
 		actions.insert({ TokenType::NegativeLookbehind, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
-			return LookAround(pattern, tokens, TokenType::LookbehindEnd, index, NegativeLookbehindExpression());
+			return LookAround(pattern, tokens, index, NegativeLookbehindExpression());
 		} });
 		actions.insert({ TokenType::PositivetiveLookahead, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
-			return LookAround(pattern, tokens, TokenType::LookaheadEnd, index, PositivetiveLookaheadExpression());
+			return LookAround(pattern, tokens, index, PositivetiveLookaheadExpression());
 		} });
 		actions.insert({ TokenType::NegativeLookahead, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
-			return LookAround(pattern, tokens, TokenType::LookaheadEnd, index, NegativeLookaheadExpression());
+			return LookAround(pattern, tokens, index, NegativeLookaheadExpression());
 		} });
 		actions.insert({ TokenType::StringHead, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
@@ -441,8 +439,8 @@ namespace ztl
 		auto current_type = tokens->at(end_index).type;
 		while(current_type != TokenType::CaptureEnd)
 		{
-			end_index++;
-			current_type = tokens->at(end_index).type;
+		end_index++;
+		current_type = tokens->at(end_index).type;
 		}*/
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
@@ -484,7 +482,7 @@ namespace ztl
 			name = Named(pattern, tokens, index);
 			index += 1;
 		}
-		
+
 		if(RegexParser::first_map[TokenType::Alter]->find(tokens->at(index).type) == RegexParser::first_map[TokenType::Alter]->end())
 		{
 			throw exception("expect symbol not in fist[CaptureRight]");
