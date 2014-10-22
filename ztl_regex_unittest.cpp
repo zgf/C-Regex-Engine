@@ -189,7 +189,7 @@ namespace ztl
 		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, { '9', '9' } })));
 		assert(TestCase(L"\\w", CharSetw()));
 		assert(TestCase(L"\\W", CharSetW()));
-		assert(TestCase(L".", CharSetCreator(true, { { L'\n', L'\n' } })));
+		assert(TestCase(L".", CharSetCreator(true, { { L'\n', L'\n' }, {'\0','\0'} })));
 		//Ыљвд\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
 
 		assert(TestCase(L"\\b", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetW())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetw()))));
@@ -471,7 +471,38 @@ namespace ztl
 		temp = L"#FF0000";
 		TestCaseExpectTrue(LR"(#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?)", temp, 0, temp.size(), temp);
 	}
-
+	void TestLookAround()
+	{
+		auto ExpectionPositionTrue = [](const wstring pattern,const wstring& input,int begin,int end)
+		{
+			RegexInterpretor interpretor(pattern);
+			auto&& result = interpretor.Match(input, 0);
+			assert(result.start == begin);
+			assert(result.length = end - begin);
+		};
+		auto ExpectionStringTrue = [](const wstring& pattern, const wstring& input, const wstring& expect)
+		{
+			RegexInterpretor interpretor(pattern);
+			auto&& result = interpretor.Match(input, 0);
+			assert(result.matched == expect);
+		};
+		auto ExpectionAllTrue = [](const wstring& pattern, const wstring& input, const vector<wstring>& expect)
+		{
+			RegexInterpretor interpretor(pattern);
+			auto&& result = interpretor.Matches(input, 0);
+			assert(std::equal(result.begin(), result.end(), expect.begin(),[](const RegexMatchResult& left,const wstring& right)
+			{
+				return left.matched == right;
+			}));
+		};
+		ExpectionStringTrue(L"(?<=>)\\w+(?=<)", L"<div>at</div>", L"at");
+		ExpectionStringTrue(LR"(<(?!/?p>)[^>]+>)", L"aa<p>one</p>bb<div>two</div>cc", L"<div>");
+		ExpectionAllTrue(LR"(\w+(?=\.))", L"He is. The dog ran. The sun is out.", { L"is", L"ran", L"out" });
+		ExpectionAllTrue(LR"(\b(?!un)\w+\b)", L"unsure sure unity used", { L"sure", L"used" });
+		ExpectionAllTrue(LR"((?<=19)\d{2}((?<=\W)(?=\w)|(?<=\w)(?=\W)))", L"1851 1999 1950 1905 2003 ", { L"99", L"50",L"05" });
+		ExpectionAllTrue(LR"((?<=19)\d{2}\b)", L"1851 1999 1950 1905 2003 ", { L"99", L"50",L"05" });
+		ExpectionAllTrue(LR"((?<!19)\d{2} )", L"1851 1999 ", { L"51 ",});
+	}
 	void TestAllComponent()
 	{
 		TestLexer();
@@ -479,6 +510,7 @@ namespace ztl
 		TestParserTree();
 		TestRegexMatchOneDFA();
 		TestRegexMatchOneNFA();
-		//TestOptimize();
+		TestLookAround();
+		
 	}
 }

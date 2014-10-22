@@ -16,6 +16,15 @@ namespace ztl
 		machine->BuildOptimizeNFA();
 		//anonymity_capture_value.resize(machine->subexpression->size());
 	}
+	RegexInterpretor::RegexInterpretor(const wstring& pattern) :optional(make_shared<vector<RegexControl>>())
+	{
+		RegexLex lexer(pattern);
+		lexer.ParsingPattern();
+		RegexParser parser(lexer);
+		parser.RegexParsing();
+		this->machine = make_shared<AutoMachine>(parser);
+		machine->BuildOptimizeNFA();
+	}
 	bool RegexInterpretor::BackReferenceAction(const wstring& input, int& input_index, SaveState& save, const wstring& expect_value)
 	{
 		auto length = expect_value.size();
@@ -249,14 +258,14 @@ namespace ztl
 		} });
 		actions.insert({ Edge::EdgeType::PositiveLookbehind, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
-			wstring temp_input = input.substr(start, input_index);
+			wstring temp_input = input.substr(0, input_index);
 			reverse(temp_input.begin(), temp_input.end());
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
 			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, end);
+				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, temp_input.size());
 				if(find_result == true)
 				{
 					save_stack.back().length = 0;
@@ -272,7 +281,7 @@ namespace ztl
 			{
 				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = 0;
-				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, end);
+				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, temp_input.size());
 				if(find_result.success == true)
 				{
 					save_stack.back().length = 0;
@@ -287,14 +296,15 @@ namespace ztl
 		} });
 		actions.insert({ Edge::EdgeType::NegativeLookbehind, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
-			wstring temp_input = input.substr(start, input_index);
+			wstring temp_input = input.substr(0, input_index);
 			reverse(temp_input.begin(), temp_input.end());
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
 			if(interpretor.machine->dfa_subexpression.find(index) != interpretor.machine->dfa_subexpression.end())
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, end);
+
+				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, temp_input.size());
 				if(find_result == false)
 				{
 					save_stack.back().length = 0;
@@ -310,7 +320,7 @@ namespace ztl
 			{
 				auto& subexpression = interpretor.machine->subexpression[index];
 				auto current_input_index = 0;
-				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, end);
+				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, temp_input.size());
 				if(find_result.success == false)
 				{
 					save_stack.back().length = 0;
@@ -484,8 +494,12 @@ namespace ztl
 				}
 				if(sumlength != 0)
 				{
+					//从第一个捕获>0开始
 					result.length = sumlength;
-					result.start = state_stack.front().input_index;
+					result.start = (*find_if(state_stack.begin(), state_stack.end(), [](const SaveState& save)
+					{
+						return save.length > 0;
+					})).input_index;
 					result.matched = input.substr(result.start, result.length);
 					result.success = true;
 					return result;
@@ -580,8 +594,8 @@ namespace ztl
 			auto match_result = RegexMatchOne(input, next_start_index, end);
 			if(match_result.success == true)
 			{
-				next_start_index = result.back().start + result.back().length;
 				result.emplace_back(move(match_result));
+				next_start_index = result.back().start + result.back().length;
 			}
 			else
 			{

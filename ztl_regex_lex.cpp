@@ -493,7 +493,7 @@ namespace ztl
 				return start_index;
 			}
 		}
-		return -1;
+		throw exception("Can't find matched )");
 	}
 	void RegexLex::ParseCapture(const TokenType type, const int offset, const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 	{

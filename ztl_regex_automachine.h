@@ -37,7 +37,7 @@ namespace ztl
 	public: /*与AST构造有关API*/
 
 		AutoMachine::StatesType NewEpsilonStates();
-		AutoMachine::StatesType NewCharStates(const CharRange& range);
+		AutoMachine::StatesType NewNormalCharStates(const CharRange& range);
 		AutoMachine::StatesType NewCharSetStates(const bool reverse, const vector<CharRange>& range);
 		AutoMachine::StatesType NewAlterStates(StatesType& left, StatesType& right);
 		AutoMachine::StatesType NewBeinAndEndStates(const Edge::EdgeType& type);
@@ -51,9 +51,6 @@ namespace ztl
 		AutoMachine::StatesType NewLoopStates(StatesType& substates, const bool greedy, const int begin, const int end);
 		AutoMachine::StatesType NewFinalStates(StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& left, StatesType& right);
-		AutoMachine::StatesType NewChooseClourseStates(bool greedy, StatesType& target);
-		AutoMachine::StatesType NewPositiveClourseStates(bool greedy, StatesType& target);
-		AutoMachine::StatesType NewKleenClourseStates(bool greedy, StatesType& target);
 		AutoMachine::StatesType NewSequenceStates(StatesType& target, int number);
 	public:/*优化相关*/
 		void							BuildOptimizeNFA();
@@ -61,6 +58,8 @@ namespace ztl
 		
 		//创建同构图
 		AutoMachine::StatesType			NewIsomorphicGraph(StatesType& target);
+		State*							NewReverseGraph(State* target, unordered_set<State*>& sign_set);
+
 		AutoMachine::StatesType			NewStates();
 		Edge*							NewEdge();
 		State*							NewOneState();

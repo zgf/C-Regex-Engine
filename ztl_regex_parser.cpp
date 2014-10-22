@@ -389,18 +389,20 @@ namespace ztl
 		} });
 		actions.insert({ TokenType::GeneralMatch, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
+			//不能让.匹配到\0,\0是结束符号- -.
 			index += 1;
-			return make_shared<CharSetExpression>(true, vector<CharRange>({ { L'\n', L'\n' } }));
+			return make_shared<CharSetExpression>(true, vector<CharRange>({ { L'\n', L'\n' }, { L'\0', L'\0' } }));
 		} });
 		actions.insert({ TokenType::MatchAllSymbol, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			index += 1;
-			return make_shared<CharSetExpression>(true, vector<CharRange>({ { 0, 65535 } }));
+			return make_shared<CharSetExpression>(false, vector<CharRange>({ { 0, 65535 } }));
 		} });
 		actions.insert({ TokenType::Positionb, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			// \b匹配 \\w和\\W之间的位置,W和w位置可以交换
 			//所以\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
+			//(?<=\w)(?=\W)|(?<=\W)(?=\w)
 			index += 1;
 			auto w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
 			auto W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));

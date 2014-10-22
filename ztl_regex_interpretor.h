@@ -71,6 +71,7 @@ namespace ztl
 	public:
 		RegexInterpretor() = delete;
 		RegexInterpretor(const wstring& pattern, const Ptr<vector<RegexControl>>_optional);
+		RegexInterpretor(const wstring& pattern);
 	public:
 		static  ActionType InitActions();
 	public:

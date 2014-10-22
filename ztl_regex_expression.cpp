@@ -646,7 +646,7 @@ namespace ztl
 		}
 		pair<State*, State*> Apply(Ptr<NormalCharExpression>& expression)
 		{
-			return this->argument->NewCharStates(expression->range);
+			return this->argument->NewNormalCharStates(expression->range);
 		}
 		pair<State*, State*> Apply(Ptr<LoopExpression>& expression)
 		{
