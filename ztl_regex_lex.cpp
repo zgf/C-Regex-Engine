@@ -4,6 +4,26 @@ namespace ztl
 {
 	RegexLex::ActionType RegexLex::action_map = RegexLex::InitActionMap();
 
+	RegexLex::RegexLex(const wstring& target)
+		: pattern(target), tokens(make_shared<vector<RegexToken>>()), optional(make_shared<vector<RegexControl>>())
+	{
+	}
+	RegexLex::RegexLex(const wstring& target, const Ptr<vector<RegexControl>>& _optional)
+		: pattern(target), tokens(make_shared<vector<RegexToken>>()), optional(_optional)
+	{
+	}
+	void RegexLex::ParsingPattern()
+	{
+		tokens = ParsingPattern(0, pattern.size());
+	}
+	Ptr<vector<RegexToken>> RegexLex::GetTokens() const
+	{
+		return tokens;
+	}
+	const wstring RegexLex::GetRawString() const
+	{
+		return pattern;
+	}
 	Ptr<vector<RegexToken>> RegexLex::ParsingPattern(int start_index, int end_index)
 	{
 		Ptr<vector<RegexToken>> result(make_shared<vector<RegexToken>>());
@@ -35,111 +55,60 @@ namespace ztl
 		RegexLex::ActionType action_map;
 		action_map.insert({ L"normal", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			RegexLex::NewNormalChar(tokens, index);
+			RegexLex::ParseNormalChar(tokens, index);
 		} });
 		action_map.insert({ L"\\", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			//第一种,普通字符.第二种后向引用
-			index += 1;
-			if(RegexLex::IsNumber(pattern[index]))
+			if(RegexLex::IsNumber(pattern[++index]))
 			{
-				tokens->emplace_back(RegexToken(TokenType::AnonymityBackReference));
-				GetNumber(pattern, index, tokens);
+				RegexLex::ParseAnonymityBackReference(pattern, tokens, index);
 			}
 			else
 			{
-				RegexLex::NewNormalChar(tokens, index);
+				RegexLex::ParseNormalChar(tokens, index);
 			}
 		} });
 		action_map.insert({ L"\\k", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			//第二种后向引用
-			tokens->emplace_back(RegexToken(TokenType::BackReference));
-			index += 2;
-			RegexLex::SkipBlankSpace(pattern, index);
-			index += 1;
-			RegexLex::GetNamed(pattern, index, tokens);
-			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, std::exception("Lex Parsing Error, can't find '>' in '\\k' action"));
-			index = result + 1;
+			ParseBackReference(pattern, tokens, index);
 		} });
 
 		//解析 自定义重复
 		action_map.insert({ L"{", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			tokens->emplace_back(RegexToken(TokenType::LoopBegin));
-			++index;
-			GetNumber(pattern, index, tokens);
-			RegexLex::SkipBlankSpace(pattern, index);
-			if(pattern[index] == ',')
-			{
-				//					tokens->emplace_back(RegexToken(TokenType::Comma));
-				++index;
-				RegexLex::SkipBlankSpace(pattern, index);
-				if(RegexLex::IsNumber(pattern[index]))
-				{
-					GetNumber(pattern, index, tokens);
-				}
-				else
-				{
-					tokens->emplace_back(RegexToken(TokenType::InFinite));
-				}
-			}
-			else
-			{
-				//这里不能用emplace_back
-				//会导致迭代器失效
-				tokens->push_back(tokens->back());
-			}
-
-			RegexLex::SkipBlankSpace(pattern, index);
-			if(pattern[index] == '}')
-			{
-				if(pattern[index + 1] == '?')
-				{
-					tokens->emplace_back(RegexToken(TokenType::LoopEnd));
-					index += 2;
-				}
-				else
-				{
-					tokens->emplace_back(RegexToken(TokenType::LoopEndGreedy));
-					index += 1;
-				}
-			}
-			else
-			{
-				throw std::exception("Lex Parsing Error, can't find '}' in '{' action");
-			}
+			ParseUserDefineLoop(pattern, tokens, index);
 		} });
 		//解析 预定义重复
 		action_map.insert({ L"*", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::KleeneLoopGreedy));
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 		action_map.insert({ L"*?", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::KleeneLoop));
-			index += 2;
+			JumpTrivalCharacter(index, 2);
 		} });
 		action_map.insert({ L"+", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::PositiveLoopGreedy));
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 		action_map.insert({ L"+?", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::PositiveLoop));
-			index += 2;
+			JumpTrivalCharacter(index, 2);
 		} });
 		action_map.insert({ L"?", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::ChoseLoopGreedy));
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 		action_map.insert({ L"??", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::ChoseLoop));
-			index += 2;
+			JumpTrivalCharacter(index, 2);
 		} });
 
 		//解析 串头串尾
@@ -153,7 +122,7 @@ namespace ztl
 			{
 				tokens->emplace_back(RegexToken(TokenType::StringTail));
 			}
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 		action_map.insert({ L"^", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
@@ -165,17 +134,17 @@ namespace ztl
 			{
 				tokens->emplace_back(RegexToken(TokenType::StringHead));
 			}
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 
 		action_map.insert({ L"[", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			index += 1;
+			JumpTrivalCharacter(index);
 			RegexLex::ParseCharSet(TokenType::CharSet, pattern, index, tokens);
 		} });
 		action_map.insert({ L"[^", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			index += 2;
+			JumpTrivalCharacter(index, 2);
 			RegexLex::ParseCharSet(TokenType::CharSetReverse, pattern, index, tokens);
 		} });
 		action_map.insert({ L"(", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
@@ -186,56 +155,28 @@ namespace ztl
 			}
 			else
 			{
-				RegexLex::ParseCapture(TokenType::CaptureBegin, 1, pattern, index, tokens, optional);
+				RegexLex::ParseCapture(TokenType::AnonymityCaptureBegin, 1, pattern, index, tokens, optional);
 			}
 		} });
 		action_map.insert({ L"(?:", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			RegexLex::ParseCapture(TokenType::NoneCapture, 3, pattern, index, tokens, optional);
 		} });
+
 		//解析命名捕获组
 		action_map.insert({ L"(<", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			tokens->emplace_back(RegexToken(TokenType::CaptureBegin));
-
-			auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
-
-			index += 2;
-
-			RegexLex::GetNamed(pattern, index, tokens);
-			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(<' action"));
-
-			auto index_begin = result + 1;
-			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
-
-			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
-			index = index_end + 1;
+			ParseNamedCapture(pattern, tokens, index, optional);
 		} });
+
 		action_map.insert({ L"(?#<", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			tokens->emplace_back(RegexToken(TokenType::RegexMacro));
-
-			auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
-
-			index += 4;
-
-			RegexLex::GetNamed(pattern, index, tokens);
-			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(?#<' action"));
-
-			auto index_begin = result + 1;
-			RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
-
-			tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
-			index = index_end + 1;
+			ParseRegexMacro(pattern, tokens, index, optional);
 		} });
+
 		action_map.insert({ L"$<", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
-			tokens->emplace_back(RegexToken(TokenType::MacroReference));
-			//第二种后向引用
-			index += 2;
-			RegexLex::GetNamed(pattern, index, tokens);
-			auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, std::exception("Lex Parsing Error, can't find '>' in '$<' action"));
-			index = result + 1;
+			ParseMacroReference(pattern, tokens, index);
 		} });
 		action_map.insert({ L"(?<=", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
@@ -257,13 +198,12 @@ namespace ztl
 		action_map.insert({ L"|", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			tokens->emplace_back(RegexToken(TokenType::Alternation));
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 		//注释
 		action_map.insert({ L"(#", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 		{
 			auto&& result = RegexLex::FindMetaSymbol(pattern, L')', index, exception("Lex Parsing Error, can't find ')' in '(#' action"));
-
 			index = result + 1;
 		} });
 		//通配符
@@ -277,7 +217,7 @@ namespace ztl
 			{
 				tokens->emplace_back(RegexToken(TokenType::GeneralMatch));
 			}
-			index += 1;
+			JumpTrivalCharacter(index);
 		} });
 
 		action_map.insert({ L"\\s", [](const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
@@ -314,6 +254,109 @@ namespace ztl
 		} });
 		return move(action_map);
 	}
+	void RegexLex::ParseUserDefineLoop(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		
+
+
+		tokens->emplace_back(RegexToken(TokenType::LoopBegin));
+		++index;
+		SetNumberToken(pattern, index, tokens);
+		RegexLex::SkipBlankSpace(pattern, index);
+		if(pattern[index] == ',')
+		{
+			JumpTrivalCharacter(index);
+			RegexLex::SkipBlankSpace(pattern, index);
+			if(RegexLex::IsNumber(pattern[index]))
+			{
+				SetNumberToken(pattern, index, tokens);
+			}
+			else
+			{
+				tokens->emplace_back(RegexToken(TokenType::InFinite));
+			}
+		}
+		else
+		{
+			tokens->push_back(tokens->back());
+		}
+
+		RegexLex::SkipBlankSpace(pattern, index);
+		if(pattern[index] != '}')
+		{
+			throw std::exception("Lex Parsing Error, can't find '}' in '{' action");
+		}
+		if(pattern[index + 1] == '?')
+		{
+			tokens->emplace_back(RegexToken(TokenType::LoopEnd));
+			JumpTrivalCharacter(index, 2);
+		}
+		else
+		{
+			tokens->emplace_back(RegexToken(TokenType::LoopEndGreedy));
+			JumpTrivalCharacter(index);
+		}
+	}
+	void RegexLex::ParseRegexMacro(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index, const Ptr<vector<RegexControl>>& optional)
+	{
+		tokens->emplace_back(RegexToken(TokenType::RegexMacro));
+
+		auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
+
+		JumpTrivalCharacter(index, 4);
+
+		RegexLex::GetNamed(pattern, index, tokens);
+		auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(?#<' action"));
+
+		auto index_begin = result + 1;
+		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
+
+		tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
+		index = index_end + 1;
+	}
+	void RegexLex::ParseNamedCapture(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index, const Ptr<vector<RegexControl>>& optional)
+	{
+		tokens->emplace_back(RegexToken(TokenType::CaptureBegin));
+
+		auto index_end = RegexLex::GetLongestMatched(L'(', L')', pattern, index);
+
+		JumpTrivalCharacter(index, 2);
+
+		RegexLex::GetNamed(pattern, index, tokens);
+		auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, exception("Lex Parsing Error, can't find '>' in '(<' action"));
+
+		auto index_begin = result + 1;
+		RegexLex::CreatNewParsePattern(pattern, index_begin, index_end, tokens, optional);
+
+		tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
+		index = index_end + 1;
+	}
+	void RegexLex::ParseMacroReference(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		tokens->emplace_back(RegexToken(TokenType::MacroReference));
+		//第二种后向引用
+		JumpTrivalCharacter(index, 2);
+		RegexLex::GetNamed(pattern, index, tokens);
+		auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, std::exception("Lex Parsing Error, can't find '>' in '$<' action"));
+		index = result + 1;
+	}
+	void RegexLex::ParseBackReference(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		//命名后向引用
+		tokens->emplace_back(RegexToken(TokenType::BackReference));
+		JumpTrivalCharacter(index, 2);
+		RegexLex::SkipBlankSpace(pattern, index);
+		JumpTrivalCharacter(index);
+
+		RegexLex::GetNamed(pattern, index, tokens);
+		auto&& result = RegexLex::FindMetaSymbol(pattern, L'>', index, std::exception("Lex Parsing Error, can't find '>' in '\\k' action"));
+		index = result + 1;
+	}
+	void RegexLex::ParseAnonymityBackReference(const wstring& pattern, Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		tokens->emplace_back(RegexToken(TokenType::AnonymityBackReference));
+		SetNumberToken(pattern, index, tokens);
+	}
 	void RegexLex::CreatNewParsePattern(const wstring& pattern, int start, int end, Ptr<vector<RegexToken>>& tokens, const Ptr<vector<RegexControl>>& optional)
 	{
 		RegexLex lexer(pattern, optional);
@@ -326,6 +369,36 @@ namespace ztl
 		{
 			++index;
 		}
+	}
+	void RegexLex::JumpTrivalCharacter(int& index, int number)
+	{
+		index += number;
+	}
+	bool RegexLex::IsBlankSpace(const wchar_t character)
+	{
+		return character == L' ' || character == L'\n' || character == L'\r' || character == L'\t';
+	}
+	bool RegexLex::IsNumber(const wchar_t character)
+	{
+		return character >= 48 && character <= 57;
+	}
+	bool RegexLex::IsBlankspace(const wchar_t character)
+	{
+		return character == L' ' || character == L'\n' || character == L'\r' || character == L'\t';
+	}
+	bool RegexLex::IsNamedChar(const wchar_t character)
+	{
+		return (character <= L'Z' && character >= L'A') || (character <= L'z' && character >= L'a') || RegexLex::IsNumber(character) || character == '_';
+	}
+	void RegexLex::ParseNormalChar(Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		auto&& old = index++;
+		tokens->emplace_back(RegexToken(TokenType::NormalChar, old, index));
+	}
+	void RegexLex::SetPreDefineCharSet(TokenType type, int& index, Ptr<vector<RegexToken>>& tokens)
+	{
+		tokens->emplace_back(RegexToken(type));
+		JumpTrivalCharacter(index, 2);
 	}
 
 	void RegexLex::GetNamed(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)
@@ -341,7 +414,7 @@ namespace ztl
 		tokens->emplace_back(RegexToken(TokenType::Named, index_begin, index_end));
 	}
 
-	void RegexLex::GetNumber(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)
+	void RegexLex::SetNumberToken(const wstring& pattern, int& index, Ptr<vector<RegexToken>>& tokens)
 	{
 		RegexLex::SkipBlankSpace(pattern, index);
 		assert(RegexLex::IsNumber(pattern[index]));
@@ -387,12 +460,13 @@ namespace ztl
 			}
 			else if(pattern[index] == '\\')
 			{
-				index += 1;
-				RegexLex::NewNormalChar(tokens, index);
+				JumpTrivalCharacter(index);
+
+				RegexLex::ParseNormalChar(tokens, index);
 			}
 			else
 			{
-				RegexLex::NewNormalChar(tokens, index);
+				RegexLex::ParseNormalChar(tokens, index);
 			}
 		}
 		tokens->emplace_back(RegexToken(TokenType::CharSetEnd));

@@ -21,7 +21,6 @@ namespace ztl
 		~Expression()
 		{
 		}
-
 		virtual void Apply(IRegexAlogrithm& algorithm) = 0;
 		bool IsEqual(Ptr<Expression>& target);
 		Ptr<vector<CharRange>> GetCharSetTable(const Ptr<vector<RegexControl>>& optional);
@@ -158,7 +157,23 @@ namespace ztl
 		}
 		void Apply(IRegexAlogrithm& algorithm);
 	};
+	class AnonymityCaptureExpression : public Expression
+	{
+	public:
+		int			index = 0;
+		Ptr<Expression> expression;
+	public:
+		AnonymityCaptureExpression() = default;
 
+		AnonymityCaptureExpression(const int& index, const Ptr<Expression>& _expression) :index(index), expression(_expression)
+		{
+		}
+		~AnonymityCaptureExpression()
+		{
+		}
+		void Apply(IRegexAlogrithm& algorithm);
+	};
+	
 	class MacroExpression : public Expression
 	{
 	public:

@@ -50,7 +50,6 @@ namespace ztl
 		LoopBegin,
 		LoopEndGreedy,
 		LoopEnd,
-		Comma,
 		ChoseLoop,
 		ChoseLoopGreedy,
 		PositiveLoop,
@@ -75,6 +74,7 @@ namespace ztl
 		//匹配所有字符
 		MatchAllSymbol,
 		Component,
+		AnonymityCaptureBegin,
 		CaptureBegin,
 		CaptureEnd,
 		NoneCapture,
@@ -82,13 +82,10 @@ namespace ztl
 		NegativeLookahead,
 		PositiveLookbehind,
 		NegativeLookbehind,
-		//LookaheadEnd,
-		//LookbehindEnd,
 		Alternation,
 		//新功能
 		RegexMacro,//(?#<name>expression)
 		MacroReference,//$<name>
-
 		//匹配行开始
 		LineBegin,
 		//匹配行结束
@@ -130,12 +127,9 @@ namespace ztl
 	};
 	enum class RegexControl
 	{
-		//MatchAll,//匹配全部才算成功
-		//MatchPartical,//部分匹配算成功
 		ExplicitCapture,//不使用捕获组功能
 		IgnoreCase,//大小写不敏感的匹配
 		Multiline,// $^ 匹配行结尾和开头
-		RightToLeft,//
 		Singleline,//
 		OnlyMatch,//仅匹配,不捕获
 	};
@@ -144,6 +138,11 @@ namespace ztl
 	public:
 		Ptr<vector<CharRange>> range_table;//字母范围表
 		Ptr<vector<unsigned short>> char_table;//总的字母表
+		int GetTableIndex(const int& target)const
+		{
+			return (*char_table)[target];
+		}
+
 	};
 	class State;
 	class Edge
@@ -166,7 +165,6 @@ namespace ztl
 			Final, //边后面是终结状态
 			AnonymityCapture,
 			AnonymityBackReference,
-		
 		};
 		struct LoopUserData
 		{

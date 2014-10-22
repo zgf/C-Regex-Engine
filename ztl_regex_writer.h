@@ -58,11 +58,14 @@ namespace ztl
 		temp = character;
 		return NormalCharCreator(temp);
 	}
-	RegexParseTreeWriter Capture(const wstring name, const RegexParseTreeWriter& expression)
+	RegexParseTreeWriter Capture( const RegexParseTreeWriter& expression)
+	{
+		return make_shared<AnonymityCaptureExpression>(0,expression.expression);
+	}
+	RegexParseTreeWriter NamedCapture(const wstring name, const RegexParseTreeWriter& expression)
 	{
 		return make_shared<CaptureExpression>(name, expression.expression);
 	}
-	
 	RegexParseTreeWriter NoneCapture(const RegexParseTreeWriter& expression)
 	{
 		return make_shared<NoneCaptureExpression>(expression.expression);

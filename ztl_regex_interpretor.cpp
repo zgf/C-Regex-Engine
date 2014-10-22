@@ -23,12 +23,12 @@ namespace ztl
 		machine->BuildOptimizeNFA();
 		//anonymity_capture_value.resize(machine->subexpression->size());
 	}
-	bool BackReferenceAction(const wstring& input, int& input_index, SaveState& save, const wstring& expect_value)
+	bool RegexInterpretor::BackReferenceAction(const wstring& input, int& input_index, SaveState& save, const wstring& expect_value)
 	{
 		auto length = expect_value.size();
 		auto&& real_value = input.substr(input_index, length);
-		
-		if(real_value==expect_value)
+
+		if(real_value == expect_value)
 		{
 			save.length = length;
 			input_index += length;
@@ -40,52 +40,7 @@ namespace ztl
 			return false;
 		}
 	}
-	template<typename dfa_container_type, typename dfa_container_key>
-	bool UsingDFAMatch(bool reverse, const wstring& input, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save, dfa_container_type& container, dfa_container_key& key)
-	{
-		auto& subfa = (container)[key];
-		SaveState dfasave;
-		auto&& result = interpretor.DFAMatch(subfa, dfasave, input, input_index, end);
-		if(result == reverse)
-		{
-			save.length = 0;
-			return true;
-		}
-		else
-		{
-			save.length = 0;
-			return false;
-		}
-	}
-	template<typename dfa_container_type, typename dfa_container_key>
-	bool UsingNFAMatch(bool reverse, const wstring& input, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save, dfa_container_type& container, dfa_container_key& key)
-	{
-		auto& subexpression = container[key];
-		auto&& result = interpretor.NFAMatch(subexpression, input, input_index, end);
-		if(result.success == reverse)
-		{
-			save.length = 0;
-			return true;
-		}
-		else
-		{
-			save.length = 0;
-			return false;
-		}
-	}
-	template<typename dfa_container_type, typename dfa_container_key>
-	bool LookAroundAction(bool reverse, const wstring& input, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save, dfa_container_type& container, dfa_container_key)
-	{
-		auto index = any_cast<dfa_container_key>(save.states->output[save.edge_index]->userdata);
-		if(container.find(index) != container.end())
-		{
-			return UsingDFAMatch(reverse, input, end, input_index, interpretor, save, *interpretor.machine->dfa_subexpression, index);
-		}
-		else
-		{
-			return UsingNFAMatch(reverse, input, end, input_index, interpretor, save, *interpretor.machine->subexpression, index);
-		}
-	}
+	
 	RegexInterpretor::ActionType RegexInterpretor::InitActions()
 	{
 		RegexInterpretor::ActionType actions;
@@ -104,9 +59,6 @@ namespace ztl
 					Final, //边后面是终结状态
 					AnonymityCapture,
 					AnonymityBackReference,
-					Jump,//无条件转移边和final差不多,只是不会匹配时被放到最后
-					JumpByTime,//通过测试Time次 any pair<int,int> index,number
-					JumpByTest,//通过测试  any int index
 					*/
 
 		actions.insert({ Edge::EdgeType::Final, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
@@ -114,7 +66,7 @@ namespace ztl
 			save_stack.back().length = 0;
 			return true;
 		} });
-		
+
 		actions.insert({ Edge::EdgeType::Head, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
 			if(input_index == start)
@@ -158,7 +110,7 @@ namespace ztl
 		{
 			auto&& name = any_cast<wstring>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
 			auto& expect_value = result.group[name].content;
-			
+
 			return BackReferenceAction(input, input_index, save_stack.back(), expect_value);
 		} });
 		actions.insert({ Edge::EdgeType::AnonymityBackReference, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
@@ -301,7 +253,6 @@ namespace ztl
 					return false;
 				}
 			}
-			//return LookAroundAction(true, input, end, input_index, interpretor, save, *interpretor.machine->dfa_subexpression, int());
 		} });
 		actions.insert({ Edge::EdgeType::PositiveLookbehind, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
@@ -340,25 +291,9 @@ namespace ztl
 					return false;
 				}
 			}
-			/*wstring temp = input.substr(begin, input_index);
-			reverse(temp.begin(), temp.end());
-			SaveState new_save;
-			new_save.input_index = save.input_index;
-			new_save.edge_index = save.edge_index;
-			new_save.states = save.states;
-			int new_input_index = 0;
-			return LookAroundAction(true, temp, temp.size(), new_input_index, interpretor, new_save, *interpretor.machine->dfa_subexpression, int());*/
 		} });
 		actions.insert({ Edge::EdgeType::NegativeLookbehind, [](const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
 		{
-			//wstring temp = input.substr(begin, input_index);
-			//reverse(temp.begin(), temp.end());
-			//SaveState new_save;
-			//new_save.input_index = save.input_index;
-			//new_save.edge_index = save.edge_index;
-			//new_save.states = save.states;
-			//int new_input_index = 0;
-			//return LookAroundAction(false, temp, temp.size(), new_input_index, interpretor, new_save, *interpretor.machine->dfa_subexpression, int());
 			wstring temp_input = input.substr(start, input_index);
 			reverse(temp_input.begin(), temp_input.end());
 			auto index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
@@ -430,7 +365,6 @@ namespace ztl
 					return false;
 				}
 			}
-			//return LookAroundAction(false, input, end, input_index, interpretor, save, *interpretor.machine->dfa_subexpression, int());
 		} });
 		return move(actions);
 	}
@@ -507,17 +441,7 @@ namespace ztl
 		return true;
 	}
 
-	void PutFinalInListEnd(State*& current_state, const int& current_edge_index)
-	{
-		//遇到final,final如果不是最后把final放到最后去
-		if(current_state->output[current_edge_index]->type == Edge::EdgeType::Final)
-		{
-			if(current_edge_index != current_state->output.size() - 1)
-			{
-				swap(current_state->output.back(), current_state->output[current_edge_index]);
-			}
-		}
-	}
+
 
 	//根据是否是第一次进入,设置状态
 	void SetState(bool is_new_state, SaveState& save, int& current_edge_index, int& current_input_index, State*& current_state)
@@ -617,7 +541,6 @@ namespace ztl
 			}
 		LoopEnd:;
 		}
-
 	}
 
 	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, const int start, const int end)
@@ -674,4 +597,82 @@ namespace ztl
 		}
 		return result;
 	}
+
+	RegexMatchResult RegexInterpretor::Match(const wstring& input, const int start )
+	{
+		if (find(optional->begin(),optional->end(),RegexControl::Multiline)!= optional->end())
+		{
+			wstring reverse_input;
+			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input,reverse_input.begin()));
+			return RegexMatchOne(reverse_input, start, reverse_input.size());
+
+		}
+		else
+		{
+			return RegexMatchOne(input, start, input.size());
+		}
+	}
+	//从指定的起始位置开始，判断输入字符串中是否存在正则表达式的第一个匹配项
+	bool RegexInterpretor::IsMatch(const wstring& input, const int start )
+	{
+		if(find(optional->begin(), optional->end(), RegexControl::Multiline) != optional->end())
+		{
+			wstring reverse_input;
+			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input, reverse_input.begin()));
+			return RegexMatchOne(reverse_input, start, reverse_input.size()).success;
+
+		}
+		else
+		{
+			return RegexMatchOne(input, start, input.size()).success;
+		}
+	}
+	//从字符串中的指定起始位置开始，在指定的输入字符串中搜索正则表达式的所有匹配项。
+	const vector<RegexMatchResult> RegexInterpretor::Matches(const wstring& input, int start )
+	{
+		if(find(optional->begin(), optional->end(), RegexControl::Multiline) != optional->end())
+		{
+			wstring reverse_input;
+			std::reverse_copy(input.cbegin(), input.cend(), inserter(reverse_input, reverse_input.begin()));
+			return RegexMatchAll(reverse_input, start, reverse_input.size());
+
+		}
+		else
+		{
+			return RegexMatchAll(input, start, input.size());
+		}
+	}
+	wstring RegexInterpretor::Replace(const wstring& input, const wstring& repalce, int start)
+	{
+		auto target = Matches(input, start);
+		vector<int> positions;
+		//计算串总长度
+		positions.emplace_back(0);
+		auto sum = 0;
+		auto count = 0;
+		for (auto&& element : target)
+		{
+			count++;
+			sum += element.length;
+			positions.push_back(element.start);
+			positions.push_back(element.start + element.length);
+		}
+		sum = input.size() - sum + count*repalce.size();
+		wstring result;
+		result.reserve(sum);
+		auto des = result.begin();
+		for(auto i = 0; i < positions.size();i+=2)
+		{
+			auto left =input.begin() + positions[i];
+			auto right =input.begin()+ positions[i + 1];
+			if (left !=right)
+			{
+				des = copy(left, right, des);
+				des = copy(repalce.begin(), repalce.end(), des);
+			}
+			
+		}
+		return result;
+	}
+
 }

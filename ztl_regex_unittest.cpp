@@ -47,7 +47,7 @@ namespace ztl
 		assert(ExpectEq(L"\\.", { TokenType::NormalChar }));
 
 		//test 捕获组
-		assert(ExpectEq(L"(a)", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::CaptureEnd }));
+		assert(ExpectEq(L"(a)", { TokenType::AnonymityCaptureBegin, TokenType::NormalChar, TokenType::CaptureEnd }));
 		assert(ExpectEqEx(L"(<bbb>a)", { { TokenType::CaptureBegin }, { TokenType::Named, 2, 5 }, { TokenType::NormalChar, 6, 7 }, { TokenType::CaptureEnd } }));
 		assert(ExpectEq(L"(?:a)", { TokenType::NoneCapture, TokenType::NormalChar, TokenType::CaptureEnd }));
 		assert(ExpectEqEx(L"(?#<bbb>a)$<bbb>", { { TokenType::RegexMacro }, { TokenType::Named, 4, 7 }, { TokenType::NormalChar, 8, 9 }, { TokenType::CaptureEnd }, { TokenType::MacroReference }, { TokenType::Named, 12, 15 } }));
@@ -76,7 +76,7 @@ namespace ztl
 
 		//后向引用
 		assert(ExpectEq(L"(<one>ee)\\k<one>", { TokenType::CaptureBegin, TokenType::Named, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::BackReference, TokenType::Named }));
-		assert(ExpectEq(L"(ee)\\1", { TokenType::CaptureBegin, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::AnonymityBackReference, TokenType::Number }));
+		assert(ExpectEq(L"(ee)\\1", { TokenType::AnonymityCaptureBegin, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::AnonymityBackReference, TokenType::Number }));
 	}
 	void TestParserUnCrash()
 	{
@@ -177,14 +177,13 @@ namespace ztl
 		assert(TestCase(L"abc", One(L'a') + (One(L'b') + One(L'c'))));
 
 		assert(TestCase(L"a{1,}", One(L'a').LoopCreator(1, -1, true)));
-		assert(TestCase(L"(<one>a)", Capture(L"one", One(L'a'))));
-		assert(TestCase(L"(aa)", Capture(L"", One(L'a') + One('a'))));
+		assert(TestCase(L"(<one>a)", NamedCapture(L"one", One(L'a'))));
+		assert(TestCase(L"(aa)", Capture( One(L'a') + One('a'))));
 
 		assert(TestCase(L"(?:abc)", NoneCapture(One(L'a') + (One(L'b') + One(L'c')))));
 		assert(TestCase(L"[^a-g]c", CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }, { 'd', 'f' }, { 'g', 'g' } }) + One('c')));
-		auto name_expression = Capture(L"", One('a'));
-		assert(TestCase(L"(a)\\1", name_expression + AnonymityBackReference(1)));
-		auto named_expression = Capture(L"one", One('a'));
+		assert(TestCase(L"(a)\\1", Capture(One('a')) + AnonymityBackReference(1)));
+		auto named_expression = NamedCapture(L"one", One('a'));
 
 		assert(TestCase(L"(<one>a)\\k<one>", named_expression + BackReference(L"one")));
 		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, { '9', '9' } })));
@@ -197,7 +196,7 @@ namespace ztl
 		assert(TestCase(L"\\B", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetw())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetW()))));
 
 		//串首尾
-		assert(TestCase(L"(a)$", Capture(L"", One('a')) + StringTail()));
+		assert(TestCase(L"(a)$", Capture( One('a')) + StringTail()));
 		auto aa = One('a') + One('a');
 		//零宽断言
 		assert(TestCase(L"^(?<!aa)", StringHead() + NegativeLookbehind(aa)));
@@ -206,14 +205,14 @@ namespace ztl
 		assert(TestCase(L"^(?=aa)", StringHead() + PositivetiveLookahead(aa)));
 		////选择
 		////|a(?<=aa)
-		assert(TestCase(L"(?<!av)|(zh[^a-c]{3,4}(a|f(?<=sy)))", NegativeLookbehind(One('a') + One('v')) | Capture(L"",
+		assert(TestCase(L"(?<!av)|(zh[^a-c]{3,4}(a|f(?<=sy)))", NegativeLookbehind(One('a') + One('v')) | Capture(
 			One('z') + (One('h') + (
 			CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }
 			}).LoopCreator(3, 4, true) +
-			Capture(L"", One('a') |
+			Capture( One('a') |
 			(One('f') + PositiveLookbehind(One('s') + One('y')))))))));
 	}
-	
+
 	void TestOptimize()
 	{
 		vector<wstring> TestList = {
@@ -250,8 +249,8 @@ namespace ztl
 			auto optional = make_shared<vector<RegexControl>>();
 			optional->emplace_back(RegexControl::ExplicitCapture);
 			RegexInterpretor interpretor(pattern, optional);
-			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
-			std::cout << result.success << endl;
+			auto&& result = interpretor.Match(input, 0);
+			//	std::cout << result.success << endl;
 			//	std::wcout << result.matched << endl;
 			assert(result.success == true);
 			assert(result.start == matched_start);
@@ -263,7 +262,7 @@ namespace ztl
 			auto optional = make_shared<vector<RegexControl>>();
 			optional->emplace_back(RegexControl::ExplicitCapture);
 			RegexInterpretor interpretor(pattern, optional);
-			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
+			auto&& result = interpretor.Match(input, 0);
 			//	std::wcout << result.matched << endl;
 			assert(result.matched == matched);
 		};
@@ -347,7 +346,7 @@ namespace ztl
 		{
 			auto optional = make_shared<vector<RegexControl>>();
 			RegexInterpretor interpretor(pattern, optional);
-			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
+			auto&& result = interpretor.Match(input, 0);
 			std::cout << result.success << endl;
 			//	std::wcout << result.matched << endl;
 			assert(result.success == true);
@@ -359,7 +358,7 @@ namespace ztl
 		{
 			auto optional = make_shared<vector<RegexControl>>();
 			RegexInterpretor interpretor(pattern, optional);
-			auto&& result = interpretor.RegexMatchOne(input, 0, input.size());
+			auto&& result = interpretor.Match(input, 0);
 			//	std::wcout << result.matched << endl;
 			assert(result.matched == matched);
 		};
@@ -384,7 +383,7 @@ namespace ztl
 
 		TestCaseExpectTrue(L"ba?", L"baabb", 0, 2, L"ba");
 		TestCaseExpectTrue(L"ba?", L"bb", 0, 1, L"b");
-		TestCaseExpectTrue(L"a*?" ,L"naa", 1, 2, L"a");
+		TestCaseExpectTrue(L"a*?", L"naa", 1, 2, L"a");
 		TestCaseExpectTrue(L"na+?", L"naa", 0, 2, L"na");
 		TestCaseExpectTrue(L"na*?", L"n", 0, 1, L"n");
 		TestCaseExpectTrue(L"na??", L"n", 0, 1, L"n");
@@ -414,8 +413,7 @@ namespace ztl
 		TestCaseExpectTrue(L"(\\d)", L"2", 0, 1, L"2");
 		temp = L"qq.";
 		TestCaseExpectTrue(LR"(\w+(<one>[\-.]\w+)*\.\k<one>)", temp, 0, temp.size(), temp);
-		
-		
+
 		//LookAround
 		temp = L"3354";
 		TestCaseExpectTrue(LR"(33(?=5)54)", temp, 0, temp.size(), temp);
@@ -481,6 +479,6 @@ namespace ztl
 		TestParserTree();
 		TestRegexMatchOneDFA();
 		TestRegexMatchOneNFA();
-			TestOptimize();
+		//TestOptimize();
 	}
 }

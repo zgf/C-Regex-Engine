@@ -31,6 +31,7 @@ namespace ztl
 		first_map.insert({ TokenType::Factor, make_shared<unordered_set<TokenType>>(unordered_set<TokenType>(
 		{
 			TokenType::CaptureBegin,
+			TokenType::AnonymityCaptureBegin,
 			TokenType::NoneCapture,
 			TokenType::PositivetiveLookahead,
 			TokenType::NegativeLookahead,
@@ -63,6 +64,14 @@ namespace ztl
 		first_map.insert({ TokenType::Alter, first_map[TokenType::Factor] });
 		return move(first_map);
 	}
+	Ptr<Expression> RegexParser::GetExpressTree()const
+	{
+		return expression;
+	}
+	Ptr<CharTable> RegexParser::GetCharTable()const
+	{
+		return char_table;
+	}
 	int WstringToNumber(const wstring& str)
 	{
 		int number;
@@ -77,34 +86,18 @@ namespace ztl
 		int index = 0;
 		expression = RegexParser::Alter(pattern, tokens, index, tokens->size());
 		char_table->range_table = expression->GetCharSetTable(optional);
-		char_table->char_table = CreatWCharTable(char_table->range_table);
+		char_table->char_table  = CreatWCharTable(char_table->range_table);
 		expression->SetTreeCharSetOrthogonal(char_table);
 	}
-	//template<typename pointer_type,typename value_type>
-	//void fill_type(pointer_type start,size_t count,value_type value)
-	//{
-	//	auto add_count = 1;
-	//	int loop_number = (int)log2(count);
-	//	*start = value;
-	//	for(auto i = 0; i < loop_number; i++)
-	//	{
-	//		//std::copy(start, start + add_count, start + add_count);
-	//		memcpy_s(start + add_count, add_count, start, add_count);
-	//		add_count <<= 1;
-	//	}
-	//	auto rest_block = count - add_count;
-	////	std::copy(start, start + rest_block, start + add_count);
-	//	memcpy_s(start + add_count, rest_block, start, rest_block);
-	//}
+
 	Ptr<vector<unsigned short>> RegexParser::CreatWCharTable(const Ptr<vector<CharRange>>& table)
 	{
 		auto result(make_shared<vector<unsigned short>>(65536));
 		auto current_iter = result->begin();
 		for(size_t i = 0; i < table->size(); i++)
 		{
-			auto&& element = (*table)[i];
-			//fill_type(result->_Myfirst, element.max - element.min + 1, i);
-			auto&& count = element.max - element.min + 1;
+			auto& element = (*table)[i];
+			auto count    = element.max - element.min + 1;
 			fill_n(current_iter, move(count), i);
 			current_iter += count;
 		}
@@ -113,12 +106,12 @@ namespace ztl
 	Ptr<Expression> RegexParser::LookBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index)
 	{
 		index += 1;
-		auto&& loop = make_shared<LoopExpression>(express);
-		auto&& current_type = tokens->at(index).type;
+		auto loop = make_shared<LoopExpression>(express);
+		auto& current_type = tokens->at(index).type;
 		auto count = 0;
 		while(current_type != TokenType::LoopEnd && current_type != TokenType::LoopEndGreedy)
 		{
-			auto&& position = tokens->at(index).position;
+			auto& position = tokens->at(index).position;
 			current_type = tokens->at(index).type;
 			if(count == 0)
 			{
@@ -178,17 +171,17 @@ namespace ztl
 		return move(loop_actions);
 	}
 	template<typename Type>
-	Ptr<Expression> LookAround(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens,  int& index, Type)
+	Ptr<Expression> LookAround(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, Type)
 	{
 		auto end_index = index;
 		index += 1;
-		auto&& current_type = tokens->at(end_index).type;
+		auto& current_type  = tokens->at(end_index).type;
 		while(current_type != TokenType::CaptureEnd)
 		{
 			end_index += 1;
 			current_type = tokens->at(end_index).type;
 		}
-		auto&& result = make_shared<Type>();
+		auto result        = make_shared<Type>();
 		result->expression = RegexParser::Alter(pattern, tokens, index, end_index);
 		index = end_index + 1;
 		return move(result);
@@ -200,14 +193,14 @@ namespace ztl
 	Ptr<Expression>  RegexParser::BackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index)
 	{
 		index += 1;
-		auto&& name = Named(pattern, tokens, index);
+		auto name = Named(pattern, tokens, index);
 		index += 1;
 		return make_shared<BackReferenceExpression>(name);
 	}
 	Ptr<Expression>  RegexParser::AnonymityBackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index)
 	{
 		index += 1;
-		auto&& name = Named(pattern, tokens, index);
+		auto name = Named(pattern, tokens, index);
 		auto number = _wtoi(name.c_str());
 		index += 1;
 		return make_shared<AnonymityBackReferenceExpression>(number);
@@ -219,11 +212,19 @@ namespace ztl
 		for(auto i = index; i < tokens->size(); i++)
 		{
 			auto& type = (*tokens)[i].type;
-			if(type == TokenType::PositiveLookbehind || type == TokenType::PositivetiveLookahead || type == TokenType::NegativeLookahead || type == TokenType::NegativeLookbehind || type == TokenType::CaptureBegin || type == TokenType::NoneCapture || type == TokenType::RegexMacro)
+			if( type == TokenType::PositiveLookbehind || 
+				type == TokenType::PositivetiveLookahead || 
+				type == TokenType::NegativeLookahead || 
+				type == TokenType::NegativeLookbehind || 
+				type == TokenType::CaptureBegin || 
+				type == TokenType::NoneCapture || 
+				type == TokenType::AnonymityCaptureBegin ||
+
+				type == TokenType::RegexMacro)
 			{
 				count++;
 			}
-			else if(type == TokenType::CaptureEnd/*||type == TokenType::LookaheadEnd||type == TokenType::LookbehindEnd*/)
+			else if(type == TokenType::CaptureEnd)
 			{
 				count--;
 			}
@@ -232,17 +233,17 @@ namespace ztl
 				return i;
 			}
 		}
-		return -1;
+		throw exception("can't find the longest ')'");
 	}
 	Ptr<Expression> RegexParser::NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
 
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
-		auto&& exp = Alter(pattern, tokens, index, end_index);
-		auto&& result = make_shared<NoneCaptureExpression>(exp);
+		auto exp       = Alter(pattern, tokens, index, end_index);
+		auto result    = make_shared<NoneCaptureExpression>(exp);
 		index += 1;
-		return move(result);
+		return result;
 	}
 	Ptr<Expression> RegexParser::RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
@@ -250,7 +251,7 @@ namespace ztl
 
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
-		wstring name = Named(pattern, tokens, index);
+		wstring name   = Named(pattern, tokens, index);
 		if(tokens->at(index).type != TokenType::Named)
 		{
 			throw exception("expect symbol not a name");
@@ -260,17 +261,17 @@ namespace ztl
 		{
 			throw exception("expect symbol not in fist[CaptureRight]");
 		}
-		auto&& alter = Alter(pattern, tokens, index, end_index);
-		auto&& result = make_shared<MacroExpression>(name, alter);
+		auto alter  = Alter(pattern, tokens, index, end_index);
+		auto result = make_shared<MacroExpression>(name, alter);
 		index += 1;
-		return move(result);
+		return result;
 	}
 	RegexParser::ActionType RegexParser::InitActionMap()
 	{
 		RegexParser::ActionType actions;
 		actions.insert({ TokenType::NormalChar, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
-			auto&& character = GetChar(pattern, tokens, index);
+			auto character = GetChar(pattern, tokens, index);
 			index += 1;
 			return make_shared<NormalCharExpression>(CharRange(character, character));
 		} });
@@ -278,6 +279,10 @@ namespace ztl
 		actions.insert({ TokenType::CaptureBegin, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			return CaptureBegin(pattern, tokens, index);
+		} });
+		actions.insert({ TokenType::AnonymityCaptureBegin, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
+		{
+			return AnonymityCaptureBegin(pattern, tokens, index);
 		} });
 		actions.insert({ TokenType::RegexMacro, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
@@ -339,7 +344,7 @@ namespace ztl
 		actions.insert({ TokenType::MacroReference, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			index += 1;
-			auto&& name = Named(pattern, tokens, index);
+			auto name = Named(pattern, tokens, index);
 			index += 1;
 			return make_shared<MacroReferenceExpression>(name);
 		} });
@@ -397,13 +402,13 @@ namespace ztl
 			// \b匹配 \\w和\\W之间的位置,W和w位置可以交换
 			//所以\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
 			index += 1;
-			auto&& w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
-			auto&& W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
+			auto w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
+			auto W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
 
-			auto&& seq_left = make_shared<SequenceExpression>(
+			auto seq_left = make_shared<SequenceExpression>(
 				make_shared<PositiveLookbehindExpression>(w),
 				make_shared<PositivetiveLookaheadExpression>(W));
-			auto&& seq_right = make_shared<SequenceExpression>(
+			auto seq_right= make_shared<SequenceExpression>(
 				make_shared<PositiveLookbehindExpression>(W),
 				make_shared<PositivetiveLookaheadExpression>(w));
 			return make_shared<AlternationExpression>(move(seq_left), move(seq_right));
@@ -413,14 +418,14 @@ namespace ztl
 		actions.insert({ TokenType::PositionB, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			index += 1;
-			auto&& w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
-			auto&& W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
-			auto&& seq_left = make_shared<SequenceExpression>(
+			auto w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
+			auto W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
+			auto seq_left = make_shared<SequenceExpression>(
 				make_shared<PositiveLookbehindExpression>(w),
 				make_shared<PositivetiveLookaheadExpression>(w));
-			auto&& seq_right = make_shared<SequenceExpression>
+			auto seq_right= make_shared<SequenceExpression>
 				(make_shared<PositiveLookbehindExpression>(W),
-				make_shared<PositivetiveLookaheadExpression>(W));
+				 make_shared<PositivetiveLookaheadExpression>(W));
 			return make_shared<AlternationExpression>(move(seq_left), move(seq_right));
 		} });
 		return move(actions);
@@ -435,23 +440,26 @@ namespace ztl
 	Ptr<Expression> RegexParser::CaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
 		index += 1;
-		/*auto end_index = index;
-		auto current_type = tokens->at(end_index).type;
-		while(current_type != TokenType::CaptureEnd)
-		{
-		end_index++;
-		current_type = tokens->at(end_index).type;
-		}*/
 		auto end_index = FindTheLongestCaptureEnd(tokens, index);
 
-		auto&& result = CaptureRight(pattern, tokens, index, end_index);
+		auto result    = CaptureRight(pattern, tokens, index, end_index);
 		index += 1;
-		return move(result);
+		return result;
 	}
+	Ptr<Expression>	 RegexParser::AnonymityCaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
+	{
+		index += 1;
+		auto end_index = FindTheLongestCaptureEnd(tokens, index);
+
+		auto result    = AnonymityCaptureRight(pattern, tokens, index, end_index);
+		index += 1;
+		return result;
+	}
+
 	Ptr<Expression> RegexParser::CharSet(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const bool reverse, int& index)
 	{
 		index += 1;
-		auto&& result = make_shared<CharSetExpression>();
+		auto result     = make_shared<CharSetExpression>();
 		result->reverse = reverse;
 		CharRange temp;
 		while(tokens->at(index).type != TokenType::CharSetEnd)
@@ -472,33 +480,40 @@ namespace ztl
 			}
 		}
 		index += 1;
-		return move(result);
+		return result;
 	}
 	Ptr<Expression> RegexParser::CaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
 	{
 		wstring name;
-		if(tokens->at(index).type == TokenType::Named)
-		{
-			name = Named(pattern, tokens, index);
-			index += 1;
-		}
-
+		name   = Named(pattern, tokens, index);
+		index += 1;
 		if(RegexParser::first_map[TokenType::Alter]->find(tokens->at(index).type) == RegexParser::first_map[TokenType::Alter]->end())
 		{
 			throw exception("expect symbol not in fist[CaptureRight]");
 		}
-		auto&& alter = Alter(pattern, tokens, index, end_index);
-		auto&& result = make_shared<CaptureExpression>(name, alter);
-		return move(result);
+		auto alter  = Alter(pattern, tokens, index, end_index);
+		auto result = make_shared<CaptureExpression>(name, alter);
+		return result;
 	}
+	Ptr<Expression>	RegexParser::AnonymityCaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
+	{
+		if(RegexParser::first_map[TokenType::Alter]->find(tokens->at(index).type) == RegexParser::first_map[TokenType::Alter]->end())
+		{
+			throw exception("expect symbol not in fist[AnonymityCaptureRight]");
+		}
+		auto alter  = Alter(pattern, tokens, index, end_index);
+		auto result = make_shared<AnonymityCaptureExpression>(0, alter);
+		return result;
+	}
+
 	Ptr<Expression> RegexParser::Express(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
 	{
-		auto&& current_type = tokens->at(index).type;
+		auto& current_type = tokens->at(index).type;
 		if(RegexParser::first_map[TokenType::Express]->find(current_type) == RegexParser::first_map[TokenType::Express]->end())
 		{
 			throw exception("expect symbol not in fist[Express]");
 		}
-		auto&& factor = Factor(pattern, tokens, index);
+		auto factor = Factor(pattern, tokens, index);
 		if(index < end_index)
 		{
 			current_type = tokens->at(index).type;
@@ -507,60 +522,52 @@ namespace ztl
 				return loop_actions[current_type](pattern, tokens, factor, index);
 			}
 		}
-		return move(factor);
+		return factor;
 	}
 	Ptr<Expression> RegexParser::Factor(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)
 	{
-		auto&& current_type = tokens->at(index).type;
-		if(RegexParser::first_map[TokenType::Factor]->find(current_type) != RegexParser::first_map[TokenType::Factor]->end())
-		{
-			return RegexParser::actions[current_type](pattern, tokens, index);
-		}
-		else
+		auto& current_type = tokens->at(index).type;
+		if(RegexParser::first_map[TokenType::Factor]->find(current_type) == RegexParser::first_map[TokenType::Factor]->end())
 		{
 			throw exception("expect symbol not in fist[Factor]");
 		}
+		return RegexParser::actions[current_type](pattern, tokens, index);
+
 	}
 	Ptr<Expression> RegexParser::Unit(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
 	{
-		if(RegexParser::first_map[TokenType::Unit]->find(tokens->at(index).type) != RegexParser::first_map[TokenType::Unit]->end())
-		{
-			auto&& left = Express(pattern, tokens, index, end_index);
-			if(index < end_index)
-			{
-				if(RegexParser::first_map[TokenType::Unit]->find(tokens->at(index).type) != RegexParser::first_map[TokenType::Unit]->end())
-				{
-					auto&& right = Unit(pattern, tokens, index, end_index);
-					return make_shared<SequenceExpression>(left, right);
-				}
-			}
-			return move(left);
-		}
-		else
+		if(RegexParser::first_map[TokenType::Unit]->find(tokens->at(index).type) == RegexParser::first_map[TokenType::Unit]->end())
 		{
 			throw exception("expect symbol not in fist[Unit]");
 		}
+		auto left = Express(pattern, tokens, index, end_index);
+		if(index < end_index)
+		{
+			if(RegexParser::first_map[TokenType::Unit]->find(tokens->at(index).type) != RegexParser::first_map[TokenType::Unit]->end())
+			{
+				auto right = Unit(pattern, tokens, index, end_index);
+				return make_shared<SequenceExpression>(left, right);
+			}
+		}
+		return left;
 	}
 	Ptr<Expression> RegexParser::Alter(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
 	{
-		auto&& current_type = tokens->at(index).type;
-		if(RegexParser::first_map[TokenType::Alter]->find(current_type) != RegexParser::first_map[TokenType::Alter]->end())
-		{
-			auto&& left = Unit(pattern, tokens, index, end_index);
-			if(index < end_index)
-			{
-				if(tokens->at(index).type == TokenType::Alternation)
-				{
-					index += 1;
-					auto&& right = Alter(pattern, tokens, index, end_index);
-					return make_shared<AlternationExpression>(left, right);
-				}
-			}
-			return move(left);
-		}
-		else
+		auto& current_type = tokens->at(index).type;
+		if(RegexParser::first_map[TokenType::Alter]->find(current_type) == RegexParser::first_map[TokenType::Alter]->end())
 		{
 			throw exception("expect symbol not in first[Alter]");
 		}
+		auto left = Unit(pattern, tokens, index, end_index);
+		if(index < end_index)
+		{
+			if(tokens->at(index).type == TokenType::Alternation)
+			{
+				index += 1;
+				auto right = Alter(pattern, tokens, index, end_index);
+				return make_shared<AlternationExpression>(left, right);
+			}
+		}
+		return move(left);
 	}
 }

@@ -11,7 +11,7 @@ namespace ztl
 	{
 	}
 
-	void AutoMachine::GetTableIndex(const CharRange& target, vector<int>& range)const
+	void AutoMachine::GetRangeTableIndex(const CharRange& target, vector<int>& range)const
 	{
 		auto&& min_index = (*table->char_table)[target.min];
 		auto&& max_index = (*table->char_table)[target.max];
@@ -20,10 +20,7 @@ namespace ztl
 			range.emplace_back(i);
 		}
 	}
-	int AutoMachine::GetTableIndex(const int& target)const
-	{
-		return (*table->char_table)[target];
-	}
+	
 	void AutoMachine::ConnetWith(State*& start, State*& end, const Edge::EdgeType& type)
 	{
 		auto edge = NewEdge();
@@ -44,8 +41,7 @@ namespace ztl
 		edge->type = type;
 		edge->userdata = userdata;
 		start->output.push_back(edge);
-		//end->input.push_back(edge);
-		//edge->srouce = start;
+		
 		edge->target = end;
 	}
 	void AutoMachine::ConnetWith(StatesType& target, const Edge::EdgeType& type, const any& userdata)
@@ -83,7 +79,7 @@ namespace ztl
 	{
 		auto&& result = NewStates();
 		assert(range.min == range.max);
-		auto&& index = GetTableIndex(range.min);
+		auto&& index = table->GetTableIndex(range.min);
 		ConnetWith(result, Edge::EdgeType::Char, index);
 		return move(result);
 	}
@@ -93,7 +89,7 @@ namespace ztl
 		vector<int> final;
 		for(auto iter : range)
 		{
-			GetTableIndex(iter, result);
+			GetRangeTableIndex(iter, result);
 		}
 
 		if(reverse == true)
@@ -117,11 +113,6 @@ namespace ztl
 	}
 	AutoMachine::StatesType AutoMachine::NewAlterStates(StatesType& left, StatesType& right)
 	{
-		//assert(left.first->input.empty());
-		//assert(right.first->input.empty());
-		//因为现在节点可能终结节点指回开始节点的情况,所以这里的断言不再需要
-		/*assert(left.second->output.empty());
-		assert(right.second->output.empty());*/
 		auto&& result = NewStates();
 		ConnetWith(result.first, left.first);
 		ConnetWith(result.first, right.first);
@@ -138,7 +129,7 @@ namespace ztl
 		//left.second->output = right.first->output;
 		return { left.first, right.second };
 	}
-	vector<AutoMachine::StatesType> AutoMachine::NewStateSequence(StatesType& target, int number)
+	vector<AutoMachine::StatesType> AutoMachine::CreateTheSameStateSequence(StatesType& target, int number)
 	{
 		vector<StatesType> stores(number);
 		for(auto& element : stores)
@@ -158,12 +149,12 @@ namespace ztl
 		}
 		else if(number == 1)
 		{
-			auto stores = NewStateSequence(target, number);
+			auto stores = CreateTheSameStateSequence(target, number);
 			return stores.front();
 		}
 		else
 		{
-			auto stores = NewStateSequence(target, number);
+			auto stores = CreateTheSameStateSequence(target, number);
 			for(auto i = 1; i < stores.size(); i++)
 			{
 				auto& left = stores[i - 1];
@@ -179,22 +170,23 @@ namespace ztl
 		ConnetWith(result, type);
 		return move(result);
 	}
-	AutoMachine::StatesType AutoMachine::NewCaptureStates(StatesType& substates, const wstring& name, const int index)
+	AutoMachine::StatesType AutoMachine::NewCaptureStates(StatesType& substates, const wstring& name)
 	{
 		auto&& result = NewStates();
-		if(name.empty())
-		{
-			//anonymity_captures->emplace_back(substates);
-			anonymity_captures.push_back({ substates, index });
-			ConnetWith(result, Edge::EdgeType::AnonymityCapture, index);
-		}
-		else
-		{
-			captures.insert({ name, substates });
-			ConnetWith(result, Edge::EdgeType::Capture, name);
-		}
+
+		captures.insert({ name, substates });
+		ConnetWith(result, Edge::EdgeType::Capture, name);
 		return move(result);
 	}
+	AutoMachine::StatesType AutoMachine::NewAnonymitCaptureStates(StatesType& substates, const int index)
+	{
+		auto result = NewStates();
+		anonymity_captures.push_back({ substates, index });
+		ConnetWith(result, Edge::EdgeType::AnonymityCapture, index);
+		
+		return move(result);
+	}
+
 	AutoMachine::StatesType AutoMachine::NewBackReferenceStates(const wstring& name)
 	{
 		auto&& result = NewStates();
@@ -217,7 +209,7 @@ namespace ztl
 	AutoMachine::StatesType AutoMachine::NewMacroReferenceStates(const wstring& name)
 	{
 		//构造NFA时,宏引用要扩展开来
-		if (macro_expression.find(name)!=macro_expression.end())
+		if(macro_expression.find(name) != macro_expression.end())
 		{
 			return NewIsomorphicGraph(macro_expression[name]);
 		}
@@ -232,57 +224,6 @@ namespace ztl
 		auto&& index = GetSubexpressionIndex(substates);
 		ConnetWith(result, type, index);
 		return move(result);
-	}
-	pair<Edge::EdgeType, Edge::EdgeType > SetPriority(bool greedy)
-	{
-		auto height = Edge::EdgeType::Final;
-		auto low = Edge::EdgeType::Epsilon ;
-		if(greedy == true)
-		{
-			height = Edge::EdgeType::Epsilon;
-		}
-		return { height, low };
-	}
-	AutoMachine::StatesType AutoMachine::ConnectLoopChain(bool greedy, AutoMachine::StatesType& loop_head, int number)
-	{
-		auto priority = SetPriority(greedy);
-		auto height = priority.first;
-		auto low = priority.second;
-		vector<AutoMachine::StatesType> chain;
-		chain.emplace_back(loop_head);
-		auto temp = NewStateSequence(loop_head, number);
-		chain.insert(chain.end(), temp.begin(), temp.end());
-		auto end_state = NewOneState();
-		assert(chain.size() > 1);
-		for(auto i = 1; i < chain.size(); i++)
-		{
-			ConnetWith(chain[i - 1].second, chain[i].first, height);
-			ConnetWith(chain[i - 1].second, end_state, low);
-		}
-
-		ConnetWith(chain.back().second, end_state, Edge::EdgeType::Epsilon);
-		return { loop_head.first, end_state };
-	}
-
-	AutoMachine::StatesType AutoMachine::LoopIncludeInFinite(bool greedy, int number, AutoMachine::StatesType& substates)
-	{
-		/*assert(number > 1);
-		auto end_node = NewOneState();
-		auto priority = SetPriority(greedy);
-		auto height = priority.first;
-		auto low = priority.second;
-		if(number > 1)
-		{
-		auto loop_head = NewSequenceStates(substates, number - 1);
-		auto middle = NewIsomorphicGraph(substates);
-		auto end_node = NewOneState();
-		ConnetWith(loop_head.second, middle.first);
-		ConnetWith(middle.second, middle.first, height);
-		ConnetWith(middle.second, end_node, low);
-		return { loop_head.first, end_node };
-		}*/
-		assert(false);
-		return {};
 	}
 
 	AutoMachine::StatesType AutoMachine::NewChooseClourseStates(bool greedy, StatesType& target)
@@ -350,11 +291,11 @@ namespace ztl
 			number = end - begin + 1;
 		}
 
-		auto chain = NewStateSequence(target, number);
+		auto chain = CreateTheSameStateSequence(target, number);
 
 		for(auto i = 1; i < chain.size(); i++)
 		{
-			if (greedy == true)
+			if(greedy == true)
 			{
 				ConnetWith(chain[i - 1].second, chain[i].first);
 				ConnetWith(chain[i - 1].second, end_state);
@@ -364,7 +305,6 @@ namespace ztl
 				ConnetWith(chain[i - 1].second, end_state);
 				ConnetWith(chain[i - 1].second, chain[i].first);
 			}
-			
 		}
 
 		if(greedy == true)
@@ -374,7 +314,6 @@ namespace ztl
 			{
 				ConnetWith(begin_state.second, end_state);
 			}
-
 		}
 		else
 		{
@@ -383,7 +322,6 @@ namespace ztl
 				ConnetWith(begin_state.second, end_state);
 			}
 			ConnetWith(begin_state.second, chain.front().first);
-
 		}
 
 		if(end != -1)
@@ -392,21 +330,18 @@ namespace ztl
 		}
 		else
 		{
-			if (greedy == true)
+			if(greedy == true)
 			{
 				ConnetWith(chain.back().second, chain.back().first);
 				ConnetWith(chain.back().second, end_state);
-
 			}
 			else
 			{
 				ConnetWith(chain.back().second, end_state);
 				ConnetWith(chain.back().second, chain.back().first);
-
 			}
 		}
 
-		
 		return { begin_state.first, end_state };
 	}
 
@@ -421,54 +356,7 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return { target.first, end };
 	}
-	void AutoMachine::SetAnonymityCaptures()
-	{
-		sort(anonymity_captures.begin(), anonymity_captures.end(), [](const pair<AutoMachine::StatesType, int>& left, const pair<AutoMachine::StatesType, int>& right)
-		{
-			return left.second < right.second;
-		});
-	}
-	void AutoMachine::BuildOptimizeNFA()
-	{
-		nfa_expression = make_shared<AutoMachine::StatesType>(ast->BuildNFA(this));
-		SetAnonymityCaptures();
-
-		//优化子表达式, DFA化
-		OptimizeSubexpress();
-		*nfa_expression = EpsilonNFAtoNFA(*nfa_expression);
-		if(CheckPure(*nfa_expression) == true)
-		{
-			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
-		}
-	}
-}
-namespace ztl
-{
-	unordered_set<State*> AutoMachine::FindReachTargetStateSet(State* start, State* target)
-	{
-		unordered_set<State*> result;
-		unordered_set<State*> marks;
-		function<void(State* element)> functor;
-		functor = [this, &functor, &target, &result, &marks](State* element)
-		{
-			if(marks.find(element) == marks.end())
-			{
-				marks.insert(element);
-
-				for(auto&& iter : element->output)
-				{
-					if(iter->target == target)
-					{
-						result.insert(element);
-					}
-					functor(iter->target);
-				}
-			}
-		};
-		functor(start);
-		//肯定查看到了尾部
-		return result;
-	}
+	
 	AutoMachine::StatesType AutoMachine::NewIsomorphicGraph(StatesType& target)
 	{
 		//旧图到新图节点的映射
@@ -498,27 +386,40 @@ namespace ztl
 
 		return { sign[target.first], sign[target.second] };
 	}
-
-	void AutoMachine::DFS(const AutoMachine::StatesType& expression)
+}
+namespace ztl
+{
+	void AutoMachine::SortAnonymityCaptures()
 	{
-		unordered_set<State*> marks;
-		function<void(State* element)> functor;
-		functor = [this, &functor, &marks](State* element)
+		//构建完nfa_express就做这个
+		assert(nfa_expression != nullptr);
+		sort(anonymity_captures.begin(), anonymity_captures.end(), [](const pair<AutoMachine::StatesType, int>& left, const pair<AutoMachine::StatesType, int>& right)
 		{
-			if(marks.find(element) == marks.end())
-			{
-				marks.insert(element);
-
-				for(auto&& iter : element->output)
-				{
-					functor(iter->target);
-				}
-			}
-		};
-		functor(expression.first);
-		//肯定查看到了尾部
-		assert(marks.find(expression.second) != marks.end());
+			return left.second < right.second;
+		});
 	}
+	void AutoMachine::BuildOptimizeNFA()
+	{
+		nfa_expression = make_shared<AutoMachine::StatesType>(ast->BuildNFA(this));
+
+		SortAnonymityCaptures();
+
+		assert(std::is_sorted(anonymity_captures.begin(), anonymity_captures.end(), [](const pair<AutoMachine::StatesType, int>& left, const pair<AutoMachine::StatesType, int>& right)
+		{
+			return left.second < right.second;
+		}));
+
+		*nfa_expression = EpsilonNFAtoNFA(*nfa_expression);
+		if(CheckPure(*nfa_expression) == true)
+		{
+			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
+		}
+		//优化子表达式, DFA化
+		OptimizeSubexpress();
+
+	}
+
+	
 	bool AutoMachine::CheckPure(const AutoMachine::StatesType& expression)
 	{
 		unordered_set<State*> marks;
@@ -526,7 +427,7 @@ namespace ztl
 		bool result = true;
 		functor = [this, &result, &functor, &marks](State* element)
 		{
-			if (find(non_dfa.begin(),non_dfa.end(),element)!=non_dfa.end())
+			if(find(non_dfa.begin(), non_dfa.end(), element) != non_dfa.end())
 			{
 				result = false;
 				return;
@@ -550,7 +451,7 @@ namespace ztl
 			}
 		};
 		functor(expression.first);
-		
+
 		return move(result);
 	}
 	//现存的边
@@ -567,17 +468,7 @@ namespace ztl
 	算法:
 	子表达式的纯正则表达式转DFA
 	*/
-	Edge::EdgeType AutoMachine::GetEdgeType(int index)const
-	{
-		if(index <= 65535)
-		{
-			return Edge::EdgeType::Char;
-		}
-		else
-		{
-			return Edge::EdgeType::Final;
-		}
-	}
+	
 	void AutoMachine::CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, vector< unordered_set<State*>>& edge_nfa_map, const int final_index)
 	{
 		//收集边到nfa集合的映射
@@ -599,8 +490,8 @@ namespace ztl
 			}
 		}
 	}
-	
-	void ClearEdgeNfaMap(vector<int>& need_clear, vector<unordered_set<State*>>& edge_nfa_map)
+
+	void AutoMachine::ClearEdgeNfaMap(vector<int>& need_clear, vector<unordered_set<State*>>& edge_nfa_map)
 	{
 		for(auto& element : need_clear)
 		{
@@ -687,41 +578,6 @@ namespace ztl
 		return move(result);
 	}
 
-	unordered_set<State*> AutoMachine::EpsilonNFASet(State* target)
-	{
-		unordered_set<State*> result;
-		result.insert(target);
-		deque<State*> queue;
-		queue.emplace_back(target);
-		while(!queue.empty())
-		{
-			State*& front = queue.front();
-
-			for(Edge*& element : front->output)
-			{
-				if(element->type == Edge::EdgeType::Epsilon)
-				{
-					if(find(result.begin(), result.end(), element->target) == result.end())
-					{
-						result.insert(element->target);
-						queue.push_back(element->target);
-					}
-				}
-			}
-			queue.pop_front();
-		}
-		return result;
-	}
-	unordered_set<State*> AutoMachine::EpsilonNFASet(unordered_set<State*>& target)
-	{
-		unordered_set<State*> result;
-		for(auto&& Iter : target)
-		{
-			auto&& temp = EpsilonNFASet(Iter);
-			result.insert(temp.begin(), temp.end());
-		}
-		return result;
-	}
 	void  AutoMachine::OptimizeSubexpress()
 	{
 		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
@@ -757,7 +613,7 @@ namespace ztl
 		}
 	}
 	//按顺序获取从target节点可达的所有非空边
-	vector<Edge*> GetReachNoneEEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign)
+	vector<Edge*> AutoMachine::GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign)
 	{
 		state_map.insert({ target, front });
 		vector<int> eposition;
@@ -773,7 +629,7 @@ namespace ztl
 				if(sign.find(element->target) == sign.end())
 				{
 					sign.insert(element->target);
-					auto temp = GetReachNoneEEdge(element->target, state_map, front, sign);
+					auto temp = GetSortedReachNoneEpsilonEdge(element->target, state_map, front, sign);
 					save.emplace_back(move(temp));
 					eposition.emplace_back(i);
 				}
@@ -790,13 +646,14 @@ namespace ztl
 			result.insert(result.end(), save[i].begin(), save[i].end());
 		}
 		result.insert(result.end(), next(target->output.begin(), eposition.back() + 1), target->output.end());
-		return move(result);
+		return result;
 	}
+	
 
-	vector<Edge*> GetReachNoneEEdge(State* target, unordered_map<State*, State*>& state_map, State* front)
+	vector<Edge*> AutoMachine::GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front)
 	{
 		unordered_set<State*> sign;
-		return GetReachNoneEEdge(target, state_map, front, sign);
+		return GetSortedReachNoneEpsilonEdge(target, state_map, front, sign);
 	}
 	//从ENFA到普通NFA
 	AutoMachine::StatesType AutoMachine::EpsilonNFAtoNFA(const AutoMachine::StatesType& target)
@@ -814,26 +671,7 @@ namespace ztl
 		{
 			auto& front = queue.front();
 
-			front->output = move(GetReachNoneEEdge(front, state_map, front));
-			//auto&& enfaset = EpsilonNFASet(front);
-			////enfaset加入映射表
-			//for(auto& element : enfaset)
-			//{
-			//	state_map.insert({ element, front });
-			//}
-			////enfaset的每一条边非空边交给front,front的空边删除
-			//vector<Edge*> new_front_output;
-			//for(auto& element : enfaset)
-			//{
-			//	for(auto&& edge : element->output)
-			//	{
-			//		if(edge->type != Edge::EdgeType::Epsilon)
-			//		{
-			//			new_front_output.emplace_back(edge);
-			//		}
-			//	}
-			//}
-			//front->output = move(new_front_output);
+			front->output = move(GetSortedReachNoneEpsilonEdge(front, state_map, front));
 			////处理enfaset的每一条边
 
 			for(auto&& edge : front->output)
@@ -865,7 +703,7 @@ namespace ztl
 		}
 
 		//处理一下non_dfa
-		for (auto& element : non_dfa)
+		for(auto& element : non_dfa)
 		{
 			element = state_map[element];
 		}

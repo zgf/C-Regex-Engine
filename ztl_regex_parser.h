@@ -16,7 +16,8 @@ Loop = ¡°LoopBegin¡± |"ChoseLoop" | "ChoseLoopGreedy" | "PositiveLoop" | "Positi
 
 Factor
 = ¡°CaptureBegin¡±  CaptureRight
-= "RegexMacro"	 CaptureRight
+= "AnonymityCaptureBegin" AnonymityCaptureRight
+= "RegexMacro"	 CaptureRight 
 = "NoneCapture"           Alert	"CaptureEnd"
 = "PositivetiveLookahead" Alert "CaptureEnd"
 = "NegativeLookahead"     Alert	"CaptureEnd"
@@ -50,52 +51,50 @@ namespace ztl
 		using ActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)> > ;
 		using LoopActionType = unordered_map < TokenType, function<Ptr<Expression>(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index)> > ;
 	private:
-		static FirstMapType first_map;
-		static ActionType actions;
-		static LoopActionType loop_actions;
+		static FirstMapType			first_map;
+		static ActionType			actions;
+		static LoopActionType		loop_actions;
 
 		Ptr<vector<RegexToken>>		tokens;
 		Ptr<Expression>				expression;
 		Ptr<CharTable>				char_table;
 		Ptr<vector<RegexControl>>	optional;
-		wstring pattern;
+		wstring						pattern;
 	public:
 		RegexParser() = delete;
 		RegexParser(const RegexLex& lexer);
 		RegexParser(const RegexLex& lexer, const Ptr<vector<RegexControl>>& _optional);
 		~RegexParser() = default;
-		void RegexParsing();
-		Ptr<vector<unsigned short>> CreatWCharTable(const Ptr<vector<CharRange>>& table);
-		Ptr<Expression> GetExpressTree()const
-		{
-			return expression;
-		}
-		Ptr<CharTable> GetCharTable()const
-		{
-			return char_table;
-		}
-		static Ptr<Expression> Alter(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
 
+		Ptr<CharTable>						GetCharTable()const;
+		Ptr<Expression>						GetExpressTree()const;
+		Ptr<vector<unsigned short>>			CreatWCharTable(const Ptr<vector<CharRange>>& table);
+		void								RegexParsing();
+		static Ptr<Expression>				Alter(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
 	private:
-		static Ptr<Expression> RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static RegexParser::ActionType		InitActionMap();
+		static RegexParser::FirstMapType	InitFirstMap();
+		static LoopActionType				InitLoopActionMap();
 
-		static 	int GetChar(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
-		static Ptr<Expression> CharSet(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const bool reverse, int& index);
-		static Ptr<Expression>  BackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
-		static Ptr<Expression>  AnonymityBackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
 
-		static Ptr<Expression> CaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
-		static Ptr<Expression> LookBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index);
-		static Ptr<Expression> NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
-		static LoopActionType InitLoopActionMap();
-		static RegexParser::ActionType InitActionMap();
-		static RegexParser::FirstMapType InitFirstMap();
-	private:
-		static Ptr<Expression> Unit(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
-		static Ptr<Expression> Factor(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
-		static Ptr<Expression> Express(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
+		static Ptr<Expression>				AnonymityBackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
+		static Ptr<Expression>				BackReference(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int&index);
+		static Ptr<Expression>				CaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression>				AnonymityCaptureBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression>				AnonymityCaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
+		static Ptr<Expression>				CaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
+		
+		static Ptr<Expression>				CharSet(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const bool reverse, int& index);
+		static Ptr<Expression>				Express(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
+		static Ptr<Expression>				Factor(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression>				LookBegin(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, Ptr<Expression>& express, int& index);
+		static Ptr<Expression>				NoneCapture(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression>				RegexMacro(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index);
+		static Ptr<Expression>				Unit(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
+		
 
-		static Ptr<Expression> CaptureRight(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index);
-		static wstring Named(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
+
+		static int							GetChar(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
+		static wstring						Named(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, const int index);
 	};
 }

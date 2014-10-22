@@ -22,6 +22,8 @@ namespace ztl
 		virtual void Visitor(Ptr<MacroExpression>& expression) = 0;
 		virtual void Visitor(Ptr<MacroReferenceExpression>& expression) = 0;
 		virtual void Visitor(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
+		virtual void Visitor(Ptr<AnonymityCaptureExpression>& expression) = 0;
+
 	};
 	template<typename ReturnType, typename ParameterType>
 	class RegexAlogrithm : public IRegexAlogrithm
@@ -54,7 +56,8 @@ namespace ztl
 		virtual ReturnType Apply(Ptr<MacroExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<MacroReferenceExpression>& expression) = 0;
 		virtual ReturnType Apply(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
-
+		virtual ReturnType Apply(Ptr<AnonymityCaptureExpression>& expression) = 0;
+		
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
 		{
@@ -121,6 +124,10 @@ namespace ztl
 			return_value = Apply(expression);
 		}
 		void Visitor(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+			return_value = Apply(expression);
+		}
+		void Visitor(Ptr<AnonymityCaptureExpression>& expression)
 		{
 			return_value = Apply(expression);
 		}
@@ -155,6 +162,8 @@ namespace ztl
 		virtual void Apply(Ptr<MacroExpression>& expression) = 0;
 		virtual void Apply(Ptr<MacroReferenceExpression>& expression) = 0;
 		virtual void Apply(Ptr<AnonymityBackReferenceExpression>& expression) = 0;
+		virtual void Apply(Ptr<AnonymityCaptureExpression>& expression) = 0;
+
 
 	public:
 		void Visitor(Ptr<CharSetExpression>& expression)
@@ -222,6 +231,10 @@ namespace ztl
 			Apply(expression);
 		}
 		void Visitor(Ptr<AnonymityBackReferenceExpression>& expression)
+		{
+			Apply(expression);
+		}
+		void Visitor(Ptr<AnonymityCaptureExpression>& expression)
 		{
 			Apply(expression);
 		}
@@ -329,6 +342,19 @@ namespace ztl
 			{
 				auto&& result = Invoke(expect->expression, expression->expression);
 				if(expect->name == expression->name && result)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		bool Apply(Ptr<AnonymityCaptureExpression>& expression)
+		{
+			auto expect = dynamic_pointer_cast<AnonymityCaptureExpression>(argument);
+			if(expect != nullptr)
+			{
+				auto&& result = Invoke(expect->expression, expression->expression);
+				if(expect->index == expression->index && result)
 				{
 					return true;
 				}
@@ -478,6 +504,10 @@ namespace ztl
 		{
 			this->Invoke(expression->expression, this->argument);
 		}
+		void Apply(Ptr<AnonymityCaptureExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+		}
 		void Apply(Ptr<NoneCaptureExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
@@ -555,6 +585,10 @@ namespace ztl
 		{
 		}
 		void Apply(Ptr<CaptureExpression>& expression)
+		{
+			this->Invoke(expression->expression, this->argument);
+		}
+		void Apply(Ptr<AnonymityCaptureExpression>& expression)
 		{
 			this->Invoke(expression->expression, this->argument);
 		}
@@ -641,13 +675,15 @@ namespace ztl
 		}
 		pair<State*, State*> Apply(Ptr<CaptureExpression>& expression)
 		{
-			auto index = 0;
-			if(expression->name.empty())
-			{
-				index = this->argument->capture_count++;
-			}
 			auto&& substates = this->Invoke(expression->expression, this->argument);
-			return this->argument->NewCaptureStates(substates, expression->name, index);
+			return this->argument->NewCaptureStates(substates, expression->name);
+		}
+		pair<State*, State*> Apply(Ptr<AnonymityCaptureExpression>& expression)
+		{
+			auto index = 0;
+			index = this->argument->capture_count++;
+			auto&& substates = this->Invoke(expression->expression, this->argument);
+			return this->argument->NewAnonymitCaptureStates(substates,  index);
 		}
 		pair<State*, State*> Apply(Ptr<NoneCaptureExpression>& expression)
 		{
@@ -780,6 +816,12 @@ namespace ztl
 	{
 		algorithm.Visitor(dynamic_pointer_cast<CaptureExpression>(shared_from_this()));
 	};
+
+	void AnonymityCaptureExpression::Apply(IRegexAlogrithm& algorithm)
+	{
+		algorithm.Visitor(dynamic_pointer_cast<AnonymityCaptureExpression>(shared_from_this()));
+	};
+
 	void NoneCaptureExpression::Apply(IRegexAlogrithm& algorithm)
 	{
 		algorithm.Visitor(dynamic_pointer_cast<NoneCaptureExpression>(shared_from_this()));
@@ -815,5 +857,5 @@ namespace ztl
 	void AnonymityBackReferenceExpression::Apply(IRegexAlogrithm& algorithm)
 	{
 		algorithm.Visitor(dynamic_pointer_cast<AnonymityBackReferenceExpression>(shared_from_this()));
-	};
+	}; 
 }

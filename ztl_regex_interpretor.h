@@ -1,7 +1,6 @@
 #pragma once
 #include "forward.h"
 #include "ztl_regex_automachine.h"
-#define private public
 
 /*
 设计:
@@ -64,10 +63,7 @@ namespace ztl
 	public:
 		wstring						pattern;
 		Ptr<vector<RegexControl>>   optional;
-		Ptr<AutoMachine>			machine;/*
-		vector<SaveState>			state_stack;
-		unordered_map<wstring, GroupIterm> capture_value;
-		vector<GroupIterm> anonymity_capture_value;*/
+		Ptr<AutoMachine>			machine;
 	public:
 		using ActionType = unordered_map < Edge::EdgeType, function<bool(const wstring& input, const int start, const int end, int& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)> > ;
 	private:
@@ -79,29 +75,28 @@ namespace ztl
 		static  ActionType InitActions();
 	public:
 		//从指定的起始位置开始，在输入字符串中搜索正则表达式的第一个匹配项，并且仅搜索指定数量的字符。
-		RegexMatchResult 	Match(const wstring& input, const int start = 0);
+		RegexMatchResult 				Match(const wstring& input, const int start = 0);
 		//从指定的起始位置开始，判断输入字符串中是否存在正则表达式的第一个匹配项
-		bool IsMatch(const wstring& input, const int index = 0);
+		bool							IsMatch(const wstring& input, const int start = 0);
 		//从字符串中的指定起始位置开始，在指定的输入字符串中搜索正则表达式的所有匹配项。
 		const vector<RegexMatchResult> 	Matches(const wstring& input, int start = 0);
-		wstring Replace(const wstring& input, const wstring& repalce, int start);
+		wstring							Replace(const wstring& input, const wstring& repalce, int start=0);
 	private:
 		void RightToLeft(wstring& text);
 		//在start到end范围内寻找正则的第一个匹配
 		RegexMatchResult RegexMatchOne(const wstring& input, const int start, const int end);
 		//在start到end范围内寻找正则的全部匹配
 		vector<RegexMatchResult> RegexMatchAll(const wstring& input, const int start, const int end);
-
+		static bool BackReferenceAction(const wstring& input, int& input_index, SaveState& save, const wstring& expect_value);
 		//DFA 匹配,从start开始,不移动start,看能否到达终结状态
 		//结果保存在save_stack.back()内
 		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const int start, const int end);
 		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
 		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start, const int end);
 
-		RegexMatchResult MatchSucced(const wstring& input,vector<SaveState>& save_stack,RegexMatchResult& result);
+		RegexMatchResult MatchSucced(const wstring& input, vector<SaveState>& save_stack, RegexMatchResult& result);
 		RegexMatchResult MatchFailed();
 		int GetWCharIndex(const wchar_t character)const;
 	public:
-		//	bool RegexInterpretor::LookAroundAction(bool reverse, const wstring& input, const int begin, const int end, int& input_index, RegexInterpretor& interpretor, SaveState& save)
 	};
 }
