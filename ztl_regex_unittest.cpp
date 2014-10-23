@@ -505,11 +505,11 @@ namespace ztl
 	}
 	void TestAllComponent()
 	{
-		TestLexer();
-		TestParserUnCrash();
-		TestParserTree();
-		TestRegexMatchOneDFA();
-		TestRegexMatchOneNFA();
+		//TestLexer();
+		//TestParserUnCrash();
+		//TestParserTree();
+		//TestRegexMatchOneDFA();
+		//TestRegexMatchOneNFA();
 		TestLookAround();
 		
 	}

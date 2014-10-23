@@ -621,7 +621,7 @@ namespace ztl
 			}
 		}
 	}
-	//按顺序获取从target节点可达的所有非空边
+	//按顺序获取从target节点可达的所有非空边,零宽断言边也当空边处理.来压缩节点,
 	vector<Edge*> AutoMachine::GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign)
 	{
 		state_map.insert({ target, front });
