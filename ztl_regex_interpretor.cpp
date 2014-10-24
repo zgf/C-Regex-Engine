@@ -671,32 +671,17 @@ namespace ztl
 	wstring RegexInterpretor::Replace(const wstring& input, const wstring& repalce, int start)
 	{
 		auto target = Matches(input, start);
-		vector<int> positions;
-		//计算串总长度
-		positions.emplace_back(0);
-		auto sum = 0;
-		auto count = 0;
-		for (auto&& element : target)
-		{
-			count++;
-			sum += element.length;
-			positions.push_back(element.start);
-			positions.push_back(element.start + element.length);
-		}
-		sum = input.size() - sum + count*repalce.size();
 		wstring result;
-		result.reserve(sum);
-		auto des = result.begin();
-		for(auto i = 0; i < positions.size();i+=2)
+		auto begin = input.begin();
+		auto next = begin;
+		for(auto i = 0; i < target.size();i++)
 		{
-			auto left =input.begin() + positions[i];
-			auto right =input.begin()+ positions[i + 1];
-			des = copy(left, right, des);
-			if (left !=right)
-			{
-				des = copy(repalce.begin(), repalce.end(), des);
-			}
+			auto& element = target[i];
+			result.insert(result.end(), next, begin + element.start);
+			result.insert(result.end(), repalce.begin(), repalce.end());
+			next = begin + element.start + element.length;
 		}
+		result.insert(result.end(),next, input.end());
 		return result;
 	}
 

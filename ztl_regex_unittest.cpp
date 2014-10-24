@@ -519,13 +519,28 @@ namespace ztl
 		ExpectionAllTrue(LR"((?<=un)\w+\b)", L"unsure sure unity used ", { L"sure", L"ity" });
 
 	}
+	void TestRepalce()
+	{
+		auto ExpectRepalceSuncceed = [](const wstring& pattern, const wstring& input,const wstring& replace, const wstring& expect)
+		{
+			RegexInterpretor interpretor(pattern);
+			auto&& result = interpretor.Replace(input,replace);
+			assert(result == expect);
+		};
+		ExpectRepalceSuncceed(LR"((?<=un)\w+\b)", L"unsure sure unity used", L"aa", L"unaa sure unaa used");
+		ExpectRepalceSuncceed(LR"((?<=19)\d{2}\b)", L"1851 1999 1950 1905 2003", L"ac",L"1851 19ac 19ac 19ac 2003");
+		auto temp = LR"((?<!19)\d{2}\b)";
+		ExpectRepalceSuncceed(temp, L"1851 1999 1950 1905 2003", L"wd", L"18wd 1999 1950 1905 20wd");
+
+	}
 	void TestAllComponent()
 	{
-		//TestLexer();
-		//TestParserUnCrash();
-		//TestParserTree();
+		/*TestLexer();
+		TestParserUnCrash();
+		TestParserTree();
 		TestRegexMatchOneDFA();
 		TestRegexMatchOneNFA();
-		TestLookAround();
+		TestLookAround();*/
+		TestRepalce();
 	}
 }
