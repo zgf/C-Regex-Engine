@@ -328,6 +328,10 @@ namespace ztl
 		return { target.first, end };
 	}
 
+
+}
+namespace ztl
+{
 	AutoMachine::StatesType AutoMachine::NewIsomorphicGraph(StatesType& target)
 	{
 		//旧图到新图节点的映射
@@ -398,24 +402,24 @@ namespace ztl
 
 		deque<pair<State*, int>>queue;
 		unordered_set<State*> sign;
-		queue.push_back({ target ,target->output.size()});
+		queue.push_back({ target, target->output.size() });
 		sign.insert(target);
 
 		while(!queue.empty())
 		{
 			auto front = queue.front();
-			for(auto i = 0; i < front.second;i++)
+			for(auto i = 0; i < front.second; i++)
 			{
 				auto edge = front.first->output[i];
 				auto next_node = edge->target;
-				if(!NoneSubGraph(front.first,i))
+				if(!NoneSubGraph(front.first, i))
 				{
 					auto& subexpress = HaveSubGraph(front.first, i);
 					NewReverseGraph(subexpress.first);
-					swap(subexpress.first,subexpress.second);
+					swap(subexpress.first, subexpress.second);
 				}
 				//如果下一节点没看到过先保存下一节点的数据
-				if (sign.find(next_node)== sign.end())
+				if(sign.find(next_node) == sign.end())
 				{
 					sign.insert(next_node);
 					queue.push_back({ next_node, next_node->output.size() });
@@ -423,14 +427,11 @@ namespace ztl
 				edge->target = front.first;
 				next_node->output.push_back(edge);
 			}
-			front.first->output.erase(front.first->output.begin(),front.first->output.begin()+ front.second);
+			front.first->output.erase(front.first->output.begin(), front.first->output.begin() + front.second);
 			queue.pop_front();
 		}
 		return target;
 	}
-}
-namespace ztl
-{
 	void AutoMachine::SortAnonymityCaptures()
 	{
 		//构建完nfa_express就做这个
@@ -511,7 +512,8 @@ namespace ztl
 				marks.insert(element);
 				for(auto&& iter : element->output)
 				{
-					if(iter->type != Edge::EdgeType::Char &&iter->type != Edge::EdgeType::Final&&iter->type != Edge::EdgeType::Epsilon)
+					assert(iter->type != Edge::EdgeType::Epsilon);
+					if(iter->type != Edge::EdgeType::Char &&iter->type != Edge::EdgeType::Final)
 					{
 						result = false;
 						return;
@@ -594,8 +596,7 @@ namespace ztl
 		//这里可以改vector
 		vector<unordered_set<State*>> edge_nfa_map(edge_sum);
 		dfa_table.emplace_back(vector<int>(edge_sum, -1));
-		//unordered_set<State*>temp;
-		//temp.insert();
+		
 
 		dfa_nfa_map.emplace_back(unordered_set<State*>({ expression.first })/*EpsilonNFASet(*/)/*)*/;
 		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });

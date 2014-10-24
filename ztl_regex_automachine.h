@@ -58,7 +58,6 @@ namespace ztl
 		
 		//创建同构图
 		AutoMachine::StatesType			NewIsomorphicGraph(StatesType& target);
-		State*							NewReverseGraph(State* target);
 
 		AutoMachine::StatesType			NewStates();
 		Edge*							NewEdge();
@@ -77,6 +76,7 @@ namespace ztl
 		vector<Edge*>					GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign);
 		vector<Edge*>					GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front);
 		void							CollecteEdgeToNFAMap(vector<unordered_set<State*>>& dfa_nfa_map, int& front, vector< unordered_set<State*>>& edge_nfa_map, const int final_index);
+		State*							NewReverseGraph(State* target);
 
 		//获取目标范围在表上的索引范围
 		void							GetRangeTableIndex(const CharRange& target, vector<int>& range_table)const;

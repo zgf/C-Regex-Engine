@@ -91,8 +91,11 @@ namespace ztl
 		//DFA 匹配,从start开始,不移动start,看能否到达终结状态
 		//结果保存在save_stack.back()内
 		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const int start, const int end);
+		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, const wstring::iterator start, const wstring::iterator end);
+
 		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
 		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const int start, const int end);
+		RegexMatchResult NFAMatch(const AutoMachine::StatesType& nfa, const wstring& input, const wstring::iterator start, const wstring::iterator end);
 
 		RegexMatchResult MatchSucced(const wstring& input, vector<SaveState>& save_stack, RegexMatchResult& result);
 		RegexMatchResult MatchFailed();

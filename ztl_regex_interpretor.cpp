@@ -128,13 +128,16 @@ namespace ztl
 			if(interpretor.machine->dfa_captures.find(name) != interpretor.machine->dfa_captures.end())
 			{
 				auto subdfa = interpretor.machine->dfa_captures[name];
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, input_index, end);
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa, save, input, input_index, end);
 				if(find_result == true)
 				{
-					result.group[name].content = input.substr(save_stack.back().input_index, save_stack.back().length);
-					result.group[name].position = save_stack.back().input_index;
-					result.group[name].length = save_stack.back().length;
-					input_index += save_stack.back().length;
+					result.group[name].content = input.substr(save.input_index, save.length);
+					result.group[name].position = save.input_index;
+					result.group[name].length = save.length;
+					input_index += save.length;
+					save_stack.back().length = save.length;
+					save_stack.back().input_index = save.input_index;
 					return true;
 				}
 				else
@@ -173,13 +176,23 @@ namespace ztl
 			if(interpretor.machine->dfa_anonymity_captures.find(name) != interpretor.machine->dfa_anonymity_captures.end())
 			{
 				auto subdfa = interpretor.machine->dfa_anonymity_captures[name];
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, input_index, end);
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa, save, input, input_index, end);
+
+				//auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, input_index, end);
 				if(find_result == true)
 				{
-					result.anonymity_group[name].content = input.substr(save_stack.back().input_index, save_stack.back().length);
+					/*result.anonymity_group[name].content = input.substr(save_stack.back().input_index, save_stack.back().length);
 					result.anonymity_group[name].position = save_stack.back().input_index;
 					result.anonymity_group[name].length = save_stack.back().length;
-					input_index += save_stack.back().length;
+					input_index += save_stack.back().length;*/
+					result.anonymity_group[name].content = input.substr(save.input_index, save.length);
+					result.anonymity_group[name].position = save.input_index;
+					result.anonymity_group[name].length = save.length;
+					input_index += save.length;
+					save_stack.back().length = save.length;
+					save_stack.back().input_index = save.input_index;
+					
 					return true;
 				}
 				else
