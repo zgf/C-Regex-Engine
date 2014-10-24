@@ -98,6 +98,7 @@ namespace ztl
 		void							AllEpsilonNFAtoNFA();
 		void							AllChangeNFAToDFA();
 		void							AllFinalMoveToEnd();
+		void							ChangeLookAroundDirect(Edge* target);
 	};
 
 	//正则自动机

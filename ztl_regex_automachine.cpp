@@ -372,7 +372,7 @@ namespace ztl
 	{
 		if(target->output[index]->type == Edge::EdgeType::Capture)
 		{
-			auto& name = any_cast<wstring>(target->output[index]->userdata);
+			auto name = any_cast<wstring>(target->output[index]->userdata);
 			return captures[name];
 		}
 		else if(target->output[index]->type == Edge::EdgeType::AnonymityCapture)
@@ -396,6 +396,28 @@ namespace ztl
 			target->output[index]->type == Edge::EdgeType::Tail ||
 			target->output[index]->type == Edge::EdgeType::Head;
 	}
+	void AutoMachine::ChangeLookAroundDirect(Edge* target)
+	{
+		if (target->type == Edge::EdgeType::PositiveLookbehind)
+		{
+			target->type = Edge::EdgeType::PositivetiveLookahead;
+		}
+		else if (target->type == Edge::EdgeType::PositivetiveLookahead)
+		{
+			target->type = Edge::EdgeType::PositiveLookbehind;
+
+		}
+		else if(target->type== Edge::EdgeType::NegativeLookbehind)
+		{ 
+			target->type = Edge::EdgeType::NegativeLookahead;
+
+		}
+		else if(target->type == Edge::EdgeType::NegativeLookahead)
+		{
+			target->type = Edge::EdgeType::NegativeLookbehind;
+		}
+	}
+	
 	//将target指向的图反转
 	State* AutoMachine::NewReverseGraph(State* target)
 	{
@@ -417,6 +439,8 @@ namespace ztl
 					auto& subexpress = HaveSubGraph(front.first, i);
 					NewReverseGraph(subexpress.first);
 					swap(subexpress.first, subexpress.second);
+					//在逆图中,断言方向需要反向才能嵌套断言
+					ChangeLookAroundDirect(edge);
 				}
 				//如果下一节点没看到过先保存下一节点的数据
 				if(sign.find(next_node) == sign.end())
@@ -571,7 +595,7 @@ namespace ztl
 	{
 		for(auto& element : need_clear)
 		{
-			edge_nfa_map[element].clear();
+			swap(edge_nfa_map[element],unordered_set<State*>());
 		}
 		need_clear.clear();
 	}
