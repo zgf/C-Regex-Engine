@@ -227,7 +227,8 @@ namespace ztl
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = input_index;
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, current_input_index, end);
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa, save, input, current_input_index, end);
 				if(find_result == true)
 				{
 					save_stack.back().length = 0;
@@ -246,6 +247,8 @@ namespace ztl
 				auto&& find_result = interpretor.NFAMatch(subexpression, input, current_input_index, end);
 				if(find_result.success == true)
 				{
+					result.group = move(find_result.group);
+					result.anonymity_group = move(find_result.anonymity_group);
 					save_stack.back().length = 0;
 					return true;
 				}
@@ -265,7 +268,8 @@ namespace ztl
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, temp_input.size());
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa, save, temp_input, current_input_index, temp_input.size());
 				if(find_result == true)
 				{
 					save_stack.back().length = 0;
@@ -284,6 +288,8 @@ namespace ztl
 				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, temp_input.size());
 				if(find_result.success == true)
 				{
+					result.group = move(find_result.group);
+					result.anonymity_group = move(find_result.anonymity_group);
 					save_stack.back().length = 0;
 					return true;
 				}
@@ -303,8 +309,8 @@ namespace ztl
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = 0;
-
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), temp_input, current_input_index, temp_input.size());
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa, save, temp_input, current_input_index, temp_input.size());
 				if(find_result == false)
 				{
 					save_stack.back().length = 0;
@@ -323,6 +329,7 @@ namespace ztl
 				auto&& find_result = interpretor.NFAMatch(subexpression, temp_input, current_input_index, temp_input.size());
 				if(find_result.success == false)
 				{
+					
 					save_stack.back().length = 0;
 					return true;
 				}
@@ -340,7 +347,8 @@ namespace ztl
 			{
 				auto subdfa = interpretor.machine->dfa_subexpression[index];
 				auto current_input_index = input_index;
-				auto&& find_result = interpretor.DFAMatch(subdfa, save_stack.back(), input, current_input_index, end);
+				SaveState save;
+				auto&& find_result = interpretor.DFAMatch(subdfa,save, input, current_input_index, end);
 				if(find_result == false)
 				{
 					save_stack.back().length = 0;
@@ -359,6 +367,7 @@ namespace ztl
 				auto&& find_result = interpretor.NFAMatch(subexpression, input, current_input_index, end);
 				if(find_result.success == false)
 				{
+					
 					save_stack.back().length = 0;
 					return true;
 				}
@@ -487,11 +496,10 @@ namespace ztl
 
 				state_stack.pop_back();
 				//assert(!state_stack.empty());
-				auto sumlength = 0;
-				for(auto&& element : state_stack)
+				auto sumlength = std::accumulate(state_stack.begin(), state_stack.end(), 0, [](const int& left, const SaveState& save)
 				{
-					sumlength += element.length;
-				}
+					return left + save.length;
+				});
 				if(sumlength != 0)
 				{
 					//从第一个捕获>0开始
@@ -501,6 +509,13 @@ namespace ztl
 						return save.length > 0;
 					})).input_index;
 					result.matched = input.substr(result.start, result.length);
+					result.success = true;
+					return result;
+				}
+				else if(start == end)
+				{
+					result.length = 0;
+					result.start = start;
 					result.success = true;
 					return result;
 				}
@@ -556,7 +571,7 @@ namespace ztl
 		auto current_input_index = start;
 		if(machine->dfa_expression != nullptr)
 		{
-			while(result.success == false && current_input_index < end)
+			while(current_input_index < end)
 			{
 				SaveState save;
 				if(DFAMatch(*machine->dfa_expression, save, input, current_input_index, end))
@@ -576,9 +591,13 @@ namespace ztl
 		}
 		else
 		{
-			while(result.success == false && current_input_index < end)
+			while(current_input_index < end)
 			{
 				result = NFAMatch(*machine->nfa_expression, input, current_input_index, end);
+				if (result.success == true)
+				{
+					return result;
+				}
 				current_input_index++;
 			}
 		}

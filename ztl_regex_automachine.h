@@ -58,7 +58,7 @@ namespace ztl
 		
 		//创建同构图
 		AutoMachine::StatesType			NewIsomorphicGraph(StatesType& target);
-		State*							NewReverseGraph(State* target, unordered_set<State*>& sign_set);
+		State*							NewReverseGraph(State* target);
 
 		AutoMachine::StatesType			NewStates();
 		Edge*							NewEdge();
@@ -88,6 +88,16 @@ namespace ztl
 		DFA								NfaToDfa(AutoMachine::StatesType& expression);
 		//优化子表达式
 		void							OptimizeSubexpress();
+		bool							IsLookBehindEdge(Edge* target);
+		bool							IsLookAroundEge(Edge* target);
+		//对lookbehind下属的子表达式全部反转图
+		void							ReverseLookBehindGraph(AutoMachine::StatesType& target);
+		AutoMachine::StatesType&		HaveSubGraph(State* target,const int index);
+		bool							NoneSubGraph(State* target, const int index);
+		void							AllNFAAddTheFinal();
+		void							AllEpsilonNFAtoNFA();
+		void							AllChangeNFAToDFA();
+		void							AllFinalMoveToEnd();
 	};
 
 	//正则自动机

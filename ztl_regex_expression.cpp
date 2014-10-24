@@ -734,7 +734,7 @@ namespace ztl
 	}
 	AutoMachine::StatesType Expression::BuildNFA(AutoMachine* target)
 	{
-		return target->NewFinalStates(BuildNFAAlgorithm().Invoke(shared_from_this(), target));
+		return target->NewFinalStates( BuildNFAAlgorithm().Invoke(shared_from_this(), target));
 	}
 	bool Expression::IsEqual(Ptr<Expression>& target)
 	{

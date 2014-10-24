@@ -107,7 +107,7 @@ namespace ztl
 	{
 		index += 1;
 		auto loop = make_shared<LoopExpression>(express);
-		auto& current_type = tokens->at(index).type;
+		auto current_type = tokens->at(index).type;
 		auto count = 0;
 		while(current_type != TokenType::LoopEnd && current_type != TokenType::LoopEndGreedy)
 		{
@@ -173,14 +173,9 @@ namespace ztl
 	template<typename Type>
 	Ptr<Expression> LookAround(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, Type)
 	{
-		auto end_index = index;
+		auto end_index = -1;
 		index += 1;
-		auto& current_type  = tokens->at(end_index).type;
-		while(current_type != TokenType::CaptureEnd)
-		{
-			end_index += 1;
-			current_type = tokens->at(end_index).type;
-		}
+		end_index = FindTheLongestCaptureEnd(tokens, index);
 		auto result        = make_shared<Type>();
 		result->expression = RegexParser::Alter(pattern, tokens, index, end_index);
 		index = end_index + 1;
@@ -378,14 +373,18 @@ namespace ztl
 		actions.insert({ TokenType::LineBegin, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			index += 1;
-			//(?<=\n)
-			return make_shared<PositiveLookbehindExpression>(make_shared<NormalCharExpression>(CharRange(L'\n', L'\n')));
+			auto n = make_shared<PositiveLookbehindExpression>(make_shared<NormalCharExpression>(CharRange(L'\n', L'\n')));
+			auto begin = make_shared<BeginExpression>();
+			//(?<=\n)|^
+			return make_shared<AlternationExpression>(move(n), move(begin));
 		} });
 		actions.insert({ TokenType::LineEnd, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			index += 1;
-			//(?=\n)
-			return make_shared<PositivetiveLookaheadExpression>(make_shared<NormalCharExpression>(CharRange(L'\n', L'\n')));
+			//(?=\n)|$
+			auto n = make_shared<PositivetiveLookaheadExpression>(make_shared<NormalCharExpression>(CharRange(L'\n', L'\n')));
+			auto end = make_shared<EndExpression>();
+			return make_shared<AlternationExpression>(move(n),move(end));
 		} });
 		actions.insert({ TokenType::GeneralMatch, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
@@ -401,8 +400,9 @@ namespace ztl
 		actions.insert({ TokenType::Positionb, [](const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index)->Ptr < Expression >
 		{
 			// \b匹配 \\w和\\W之间的位置,W和w位置可以交换
-			//所以\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
-			//(?<=\w)(?=\W)|(?<=\W)(?=\w)
+			//所以\b ==((?<=\w)(?=\W)|(?<=\W)(?=\w))| ((^(?=\w)|(?<=\w)$)
+			//((?<=\w)(?=\W)|(?<=\W)(?=\w))|
+			//((^(?=\w)|(?<=\w)$)
 			index += 1;
 			auto w = make_shared<CharSetExpression>(false, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
 			auto W = make_shared<CharSetExpression>(true, vector<CharRange>({ { L'a', L'z' }, { L'A', L'Z' }, { '0', '9' }, { '_', '_' }, { 0x4E00, 0x9FA5 }, { 0xF900, 0xFA2D } }));
@@ -413,7 +413,11 @@ namespace ztl
 			auto seq_right= make_shared<SequenceExpression>(
 				make_shared<PositiveLookbehindExpression>(W),
 				make_shared<PositivetiveLookaheadExpression>(w));
-			return make_shared<AlternationExpression>(move(seq_left), move(seq_right));
+			auto input_head = make_shared<SequenceExpression>(make_shared<BeginExpression>(), make_shared<PositivetiveLookaheadExpression>(w));
+			auto input_end = make_shared<SequenceExpression>(make_shared<PositiveLookbehindExpression>(w),make_shared<EndExpression>());
+			auto left = make_shared<AlternationExpression>(move(seq_left), move(seq_right));
+			auto right = make_shared<AlternationExpression>(move(input_head), move(input_end));
+			return make_shared<AlternationExpression>(move(left), move(right));
 		} });
 		//所以\B == ((?<=\\w)(?=\\w))|((?<=\\W)(?=\\W))
 
@@ -510,7 +514,7 @@ namespace ztl
 
 	Ptr<Expression> RegexParser::Express(const wstring& pattern, const Ptr<vector<RegexToken>>& tokens, int& index, const int end_index)
 	{
-		auto& current_type = tokens->at(index).type;
+		auto current_type = tokens->at(index).type;
 		if(RegexParser::first_map[TokenType::Express]->find(current_type) == RegexParser::first_map[TokenType::Express]->end())
 		{
 			throw exception("expect symbol not in fist[Express]");

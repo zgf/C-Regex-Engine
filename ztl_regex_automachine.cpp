@@ -225,12 +225,12 @@ namespace ztl
 	AutoMachine::StatesType AutoMachine::NewLookAroundStates(StatesType& substates, const Edge::EdgeType& type)
 	{
 		auto&& result = NewStates();
-		if(type == Edge::EdgeType::NegativeLookbehind || type == Edge::EdgeType::PositiveLookbehind)
+		/*if(type == Edge::EdgeType::NegativeLookbehind || type == Edge::EdgeType::PositiveLookbehind)
 		{
 			unordered_set<State*> sign;
 			substates.first = NewReverseGraph(substates.first, sign);
 			swap(substates.first, substates.second);
-		}
+		}*/
 		auto&& index = GetSubexpressionIndex(substates);
 		ConnetWith(result, type, index);
 		return move(result);
@@ -357,44 +357,75 @@ namespace ztl
 
 		return { sign[target.first], sign[target.second] };
 	}
-
-	State* AutoMachine::NewReverseGraph(State* target, unordered_set<State*>& sign_set)
+	bool AutoMachine::IsLookAroundEge(Edge* target)
 	{
-		sign_set.insert(target);
-		if(target->output.empty())
+		return target->type == Edge::EdgeType::NegativeLookahead ||
+			target->type == Edge::EdgeType::PositivetiveLookahead ||
+			target->type == Edge::EdgeType::NegativeLookbehind ||
+			target->type == Edge::EdgeType::PositiveLookbehind;
+	}
+	AutoMachine::StatesType&	AutoMachine::HaveSubGraph(State* target, const int index)
+	{
+		if(target->output[index]->type == Edge::EdgeType::Capture)
 		{
-			return target;
+			auto& name = any_cast<wstring>(target->output[index]->userdata);
+			return captures[name];
 		}
-
-		vector<pair<State*, int>> next_list;
-		for(auto i = 0; i <target->output.size(); i++)
+		else if(target->output[index]->type == Edge::EdgeType::AnonymityCapture)
 		{
-			auto next = target->output[i]->target;
-			if(sign_set.find(next) == sign_set.end())
+			auto name = any_cast<int>(target->output[index]->userdata);
+			return anonymity_captures[name].first;
+		}
+		else if(IsLookAroundEge(target->output[index]))
+		{
+			auto name = any_cast<int>(target->output[index]->userdata);
+			return subexpression[name];
+		}
+		throw exception("Can't find SubGraph");
+	}
+	bool AutoMachine::NoneSubGraph(State* target, const int index)
+	{
+		return target->output[index]->type == Edge::EdgeType::Char ||
+			target->output[index]->type == Edge::EdgeType::BackReference ||
+			target->output[index]->type == Edge::EdgeType::Epsilon ||
+			target->output[index]->type == Edge::EdgeType::Final ||
+			target->output[index]->type == Edge::EdgeType::Tail ||
+			target->output[index]->type == Edge::EdgeType::Head;
+	}
+	//将target指向的图反转
+	State* AutoMachine::NewReverseGraph(State* target)
+	{
+
+		deque<pair<State*, int>>queue;
+		unordered_set<State*> sign;
+		queue.push_back({ target ,target->output.size()});
+		sign.insert(target);
+
+		while(!queue.empty())
+		{
+			auto front = queue.front();
+			for(auto i = 0; i < front.second;i++)
 			{
-				next_list.push_back({ NewReverseGraph(next, sign_set), i });
+				auto edge = front.first->output[i];
+				auto next_node = edge->target;
+				if(!NoneSubGraph(front.first,i))
+				{
+					auto& subexpress = HaveSubGraph(front.first, i);
+					NewReverseGraph(subexpress.first);
+					swap(subexpress.first,subexpress.second);
+				}
+				//如果下一节点没看到过先保存下一节点的数据
+				if (sign.find(next_node)== sign.end())
+				{
+					sign.insert(next_node);
+					queue.push_back({ next_node, next_node->output.size() });
+				}
+				edge->target = front.first;
+				next_node->output.push_back(edge);
 			}
+			front.first->output.erase(front.first->output.begin(),front.first->output.begin()+ front.second);
+			queue.pop_front();
 		}
-		vector<int> position;
-		position.emplace_back(-1);
-		for(auto& element : next_list)
-		{
-			auto& next = element.first;
-			auto& index = element.second;
-			target->output[index]->target = target;
-
-			next->output.emplace_back(target->output[index]);
-			position.emplace_back(index);
-		}
-		vector<Edge*> result;
-		for(auto i = 0; i < position.size() - 1;i++)
-		{
-			auto& left = position[i];
-			auto& right = position[i + 1];
-			copy(next(target->output.begin(),left + 1),next(target->output.begin(),right),inserter(result,result.begin()));
-		}
-		copy(next(target->output.begin(), position.back() + 1), target->output.end(),inserter(result,result.begin()));
-		target->output = move(result);
 		return target;
 	}
 }
@@ -421,6 +452,8 @@ namespace ztl
 		}));
 
 		*nfa_expression = EpsilonNFAtoNFA(*nfa_expression);
+		ReverseLookBehindGraph(*nfa_expression);
+		//对逆向lookaround需要的逆图进行处理
 		if(CheckPure(*nfa_expression) == true)
 		{
 			dfa_expression = make_shared<DFA>(this->NfaToDfa(*nfa_expression));
@@ -428,7 +461,39 @@ namespace ztl
 		//优化子表达式, DFA化
 		OptimizeSubexpress();
 	}
+	void	AutoMachine::ReverseLookBehindGraph(AutoMachine::StatesType& target)
+	{
+		deque<State*> queue;
+		//待处理边表
 
+		unordered_set<State*> sign;
+		queue.push_back(target.first);
+		sign.insert(target.first);
+		while(!queue.empty())
+		{
+			auto& front = queue.front();
+
+			////处理nfa的每一条边
+			for(auto&& edge : front->output)
+			{
+				//在之前对NFARoot调用了ENFA2NFA
+				assert(edge->type != Edge::EdgeType::Epsilon);
+				if(IsLookBehindEdge(edge))
+				{
+					auto index = any_cast<int>(edge->userdata);
+					NewReverseGraph(subexpression[index].first);
+					swap(subexpression[index].first, subexpression[index].second);
+				}
+				if(sign.find(edge->target) == sign.end())
+				{
+					//新的未处理过的节点
+					queue.push_back(edge->target);
+					sign.insert(edge->target);
+				}
+			}
+			queue.pop_front();
+		}
+	}
 	bool AutoMachine::CheckPure(const AutoMachine::StatesType& expression)
 	{
 		unordered_set<State*> marks;
@@ -586,7 +651,70 @@ namespace ztl
 		result.finalset = final_dfa;
 		return move(result);
 	}
+	void	AutoMachine::AllNFAAddTheFinal()
+	{
+		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
+		{
+			auto& subexpress = iter->second;
+			subexpress = NewFinalStates(subexpress);
 
+		}
+		for(size_t i = 0; i < subexpression.size(); ++i)
+		{
+			auto&& subexpress = subexpression[i];
+			subexpress = NewFinalStates(subexpress);
+		}
+		for(size_t i = 0; i < this->anonymity_captures.size(); ++i)
+		{
+			auto&& subexpress = anonymity_captures[i].first;
+			subexpress = NewFinalStates(subexpress);
+		}
+	}
+	void	AutoMachine::AllEpsilonNFAtoNFA()
+	{
+		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
+		{
+			auto& subexpress = iter->second;
+			subexpress = EpsilonNFAtoNFA(subexpress);
+		}
+		for(size_t i = 0; i < subexpression.size(); ++i)
+		{
+			auto&& subexpress = subexpression[i];
+			subexpress = EpsilonNFAtoNFA(subexpress);
+		}
+		for(size_t i = 0; i < this->anonymity_captures.size(); ++i)
+		{
+			auto&& subexpress = anonymity_captures[i].first;
+			subexpress = EpsilonNFAtoNFA(subexpress);
+		}
+	}
+	void	AutoMachine::AllChangeNFAToDFA()
+	{
+		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
+		{
+			auto& subexpress = iter->second;
+			if(CheckPure(subexpress))
+			{
+				dfa_captures.insert({ iter->first, NfaToDfa(subexpress) });
+			}
+		}
+		for(size_t i = 0; i < subexpression.size(); ++i)
+		{
+			auto&& subexpress = subexpression[i];
+			if(CheckPure(subexpress))
+			{
+				dfa_subexpression.insert({ i, NfaToDfa(subexpress) });
+			}
+		}
+		for(size_t i = 0; i < this->anonymity_captures.size(); ++i)
+		{
+			auto&& subexpress = anonymity_captures[i].first;
+			if(CheckPure(subexpress))
+			{
+				dfa_anonymity_captures.insert({ i, NfaToDfa(subexpress) });
+			}
+		}
+	}
 	void  AutoMachine::OptimizeSubexpress()
 	{
 		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
@@ -621,6 +749,11 @@ namespace ztl
 			}
 		}
 	}
+	bool AutoMachine::IsLookBehindEdge(Edge* target)
+	{
+		return 	target->type == Edge::EdgeType::PositiveLookbehind ||
+			target->type == Edge::EdgeType::NegativeLookbehind;
+	}
 	//按顺序获取从target节点可达的所有非空边,零宽断言边也当空边处理.来压缩节点,
 	vector<Edge*> AutoMachine::GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign)
 	{
@@ -649,9 +782,13 @@ namespace ztl
 				}
 			}
 		}
+
 		for(auto i = 0; i < eposition.size() - 1; i++)
 		{
-			result.insert(result.end(), next(target->output.begin(), eposition[i] + 1), next(target->output.begin(), eposition[i + 1]));
+			if(target->output[eposition[i + 1]]->type == Edge::EdgeType::Epsilon)
+			{
+				result.insert(result.end(), next(target->output.begin(), eposition[i] + 1), next(target->output.begin(), eposition[i + 1]));
+			}
 			result.insert(result.end(), save[i].begin(), save[i].end());
 		}
 		result.insert(result.end(), next(target->output.begin(), eposition.back() + 1), target->output.end());

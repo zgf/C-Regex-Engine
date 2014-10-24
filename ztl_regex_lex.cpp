@@ -453,7 +453,7 @@ namespace ztl
 		tokens->emplace_back(RegexToken(type));
 		for(; index != result;)
 		{
-			if(pattern[index] == L'-')
+			if((pattern[index] == L'-'&& pattern[index - 1] != L'[') && (pattern[index] == L'-'&& pattern[index - 1] != L']'))
 			{
 				tokens->emplace_back(RegexToken(TokenType::Component));
 				++index;
@@ -515,5 +515,19 @@ namespace ztl
 
 		index = index_end + 1;
 		tokens->emplace_back(RegexToken(TokenType::CaptureEnd));
+
+		if(!pattern.compare(index, 1, L"+") ||
+			!pattern.compare(index, 1, L"?") ||
+			!pattern.compare(index, 1, L"*"))
+		{
+			RegexLex::ParseNormalChar(tokens, index);
+		}
+		else if(!pattern.compare(index, 2, L"+?") ||
+			!pattern.compare(index, 2, L"??") ||
+			!pattern.compare(index, 2, L"*?"))
+		{
+			RegexLex::ParseNormalChar(tokens, index);
+			RegexLex::ParseNormalChar(tokens, index);
+		}
 	}
 }

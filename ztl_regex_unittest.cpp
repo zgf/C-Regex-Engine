@@ -178,7 +178,7 @@ namespace ztl
 
 		assert(TestCase(L"a{1,}", One(L'a').LoopCreator(1, -1, true)));
 		assert(TestCase(L"(<one>a)", NamedCapture(L"one", One(L'a'))));
-		assert(TestCase(L"(aa)", Capture( One(L'a') + One('a'))));
+		assert(TestCase(L"(aa)", Capture(One(L'a') + One('a'))));
 
 		assert(TestCase(L"(?:abc)", NoneCapture(One(L'a') + (One(L'b') + One(L'c')))));
 		assert(TestCase(L"[^a-g]c", CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }, { 'd', 'f' }, { 'g', 'g' } }) + One('c')));
@@ -189,14 +189,14 @@ namespace ztl
 		assert(TestCase(L"\\d", CharSetCreator(false, { { '0', '0' }, { '1', '8' }, { '9', '9' } })));
 		assert(TestCase(L"\\w", CharSetw()));
 		assert(TestCase(L"\\W", CharSetW()));
-		assert(TestCase(L".", CharSetCreator(true, { { L'\n', L'\n' }, {'\0','\0'} })));
-		//所以\b == ((?<=\\w)(?=\\W))|((?<=\\W)(?=\\w))
+		assert(TestCase(L".", CharSetCreator(true, { { L'\n', L'\n' }, { '\0', '\0' } })));
+		//所以\b ==((?<=\w)(?=\W)|(?<=\W)(?=\w))| ((^(?=\w)|(?<=\w)$)
 
-		assert(TestCase(L"\\b", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetW())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetw()))));
+		assert(TestCase(L"\\b", ((PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetW())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetw()))) | (StringHead() + PositivetiveLookahead(CharSetw()) | PositiveLookbehind(CharSetw()) + StringTail())));
 		assert(TestCase(L"\\B", (PositiveLookbehind(CharSetw()) + PositivetiveLookahead(CharSetw())) | (PositiveLookbehind(CharSetW()) + PositivetiveLookahead(CharSetW()))));
 
 		//串首尾
-		assert(TestCase(L"(a)$", Capture( One('a')) + StringTail()));
+		assert(TestCase(L"(a)$", Capture(One('a')) + StringTail()));
 		auto aa = One('a') + One('a');
 		//零宽断言
 		assert(TestCase(L"^(?<!aa)", StringHead() + NegativeLookbehind(aa)));
@@ -209,8 +209,11 @@ namespace ztl
 			One('z') + (One('h') + (
 			CharSetCreator(true, { { 'a', 'a' }, { 'b', 'b' }, { 'c', 'c' }
 			}).LoopCreator(3, 4, true) +
-			Capture( One('a') |
+			Capture(One('a') |
 			(One('f') + PositiveLookbehind(One('s') + One('y')))))))));
+		assert(TestCase(L"(?<=3(?=5))54", PositiveLookbehind(One('3') + PositivetiveLookahead(One('5'))) + (One('5') + One('4'))));
+		assert(TestCase(L"(?<=>)+\\w+(?=<)", PositiveLookbehind(One('>'))+(One('+')+(CharSetw().LoopCreator(1,-1,true)+PositivetiveLookahead(One('<'))))));
+		
 	}
 
 	void TestOptimize()
@@ -296,21 +299,21 @@ namespace ztl
 		TestCaseExpectTrue(L"((3)-(3))", L"3-3", 0, 3, L"3-3");
 		TestCaseExpectTrue(L"(\\d)", L"2", 0, 1, L"2");
 		temp = L"qq.";
-		TestCaseExpectTrue(LR"(\w+([\-.]\w+)*\.)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\w+([-.]\w+)*\.)", temp, 0, temp.size(), temp);
 		temp = L"qq";
-		TestCaseExpectTrue(LR"(\w+([\-.]\w+)*)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\w+([-.]\w+)*)", temp, 0, temp.size(), temp);
 		temp = L"601519305@";
-		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\w+([-+.]\w+)*@)", temp, 0, temp.size(), temp);
 		temp = L"601519305";
-		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\w+([-+.]\w+)*)", temp, 0, temp.size(), temp);
 		temp = L".com";
-		TestCaseExpectTrue(LR"(\.\w+([\-.]\w+)*)", temp, 0, temp.size(), temp);
+		TestCaseExpectTrue(LR"(\.\w+([-.]\w+)*)", temp, 0, temp.size(), temp);
 		temp = L"ss";
 		TestCaseExpectTrue(LR"(s+s)", temp, 0, temp.size(), temp);
 		temp = L".q.";
 		TestCaseExpectTrue(LR"(([.]\w+)*\.)", temp, 0, temp.size(), temp);
-		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"601519305@qq.com", 0, 16, L"601519305@qq.com");
-		TestCaseExpectTrue(LR"(\w+([\-+.]\w+)*@\w+([\-.]\w+)*\.\w+([\-.]\w+)*)", L"aaa@msn.com", 0, 11, L"aaa@msn.com");
+		TestCaseExpectTrue(LR"(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)", L"601519305@qq.com", 0, 16, L"601519305@qq.com");
+		TestCaseExpectTrue(LR"(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)", L"aaa@msn.com", 0, 11, L"aaa@msn.com");
 
 		//
 		TestCaseExpectTrue(LR"(\d{3}-\d{8}|\d{4}-(\d{7}|\d{8}))", L"010-12345678", 0, 12, L"010-12345678");
@@ -320,9 +323,9 @@ namespace ztl
 		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"09", 0, 2, L"09");
 		TestCaseExpectTrue(LR"(((0?[1-9])|((1|2)[0-9])|30|31))", L"1", 0, 1, L"1");
 		TestCaseExpectTrue(LR"(31|30|((0?[1-9])|((1|2)[0-9])))", L"31", 0, 2, L"31");
-		TestCaseExpectTrue(LR"([\-+]?\d+(\.\d+)?)", L"-9.90", 0, 5, L"-9.90");
-		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L"67-99", L"67");
-		TestCaseExpectFalse(LR"([\-+]?\d+(\.\d+)?)", L".6", L"6");
+		TestCaseExpectTrue(LR"([-+]?\d+(\.\d+)?)", L"-9.90", 0, 5, L"-9.90");
+		TestCaseExpectFalse(LR"([-+]?\d+(\.\d+)?)", L"67-99", L"67");
+		TestCaseExpectFalse(LR"([-+]?\d+(\.\d+)?)", L".6", L"6");
 		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"100", 0, 3, L"100");
 		TestCaseExpectTrue(LR"((0|[1-9]\d*))", L"12", 0, 2, L"12");
 		TestCaseExpectFalse(LR"((0|[1-9]\d*))", L"01", L"0");
@@ -419,7 +422,6 @@ namespace ztl
 		TestCaseExpectTrue(LR"(33(?=5)54)", temp, 0, temp.size(), temp);
 		TestCaseExpectTrue(LR"(33(?!2)54)", temp, 0, temp.size(), temp);
 
-		TestCaseExpectTrue(LR"(33(?<=3)54)", temp, 0, temp.size(), temp);
 		TestCaseExpectTrue(LR"(33(?<!2)54)", temp, 0, temp.size(), temp);
 
 		//正则宏
@@ -470,10 +472,14 @@ namespace ztl
 		TestCaseExpectTrue(LR"([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})", temp, 0, temp.size(), temp);
 		temp = L"#FF0000";
 		TestCaseExpectTrue(LR"(#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?)", temp, 0, temp.size(), temp);
+
+		//temp = L"3354";
+
+		//TestCaseExpectTrue(LR"((?<=3(?=5))54)", temp, 2, temp.size(), L"54");
 	}
 	void TestLookAround()
 	{
-		auto ExpectionPositionTrue = [](const wstring pattern,const wstring& input,int begin,int end)
+		auto ExpectionPositionTrue = [](const wstring pattern, const wstring& input, int begin, int end)
 		{
 			RegexInterpretor interpretor(pattern);
 			auto&& result = interpretor.Match(input, 0);
@@ -490,27 +496,36 @@ namespace ztl
 		{
 			RegexInterpretor interpretor(pattern);
 			auto&& result = interpretor.Matches(input, 0);
-			assert(std::equal(result.begin(), result.end(), expect.begin(),[](const RegexMatchResult& left,const wstring& right)
+			assert(std::equal(result.begin(), result.end(), expect.begin(), [](const RegexMatchResult& left, const wstring& right)
 			{
 				return left.matched == right;
 			}));
+			assert(result.size() != 0);
 		};
-		ExpectionStringTrue(L"(?<=>)\\w+(?=<)", L"<div>at</div>", L"at");
-		ExpectionStringTrue(LR"(<(?!/?p>)[^>]+>)", L"aa<p>one</p>bb<div>two</div>cc", L"<div>");
+
+		ExpectionAllTrue(LR"(\b\w+((?<=\w)$))", L"themf theme themd them", {L"them"});
+		ExpectionStringTrue(L"(?<=>)a(?=<)", L"<div>a</div>", L"a");
+		ExpectionAllTrue(LR"(<(?!/?p>)[^>]+>)", L"aa<p>one</p>bb<div>two</div>cc", { L"<div>",L"</div>" });
+		ExpectionAllTrue(LR"(<(?=/?p>)[^>]+>)", L"aa<p>one</p>bb<div>two</div>cc", { L"<p>", L"</p>" });
+		ExpectionAllTrue(LR"((?=(\d+))\w+\1)", L"456x56", { L"56x56" });
+		 
+		ExpectionAllTrue(LR"((?!(\d+(?=(x5))))\w+)", L"456x56x5", { L"x56x5" });
+		
+
 		ExpectionAllTrue(LR"(\w+(?=\.))", L"He is. The dog ran. The sun is out.", { L"is", L"ran", L"out" });
-		ExpectionAllTrue(LR"(\b(?!un)\w+\b)", L"unsure sure unity used", { L"sure", L"used" });
-		ExpectionAllTrue(LR"((?<=19)\d{2}((?<=\W)(?=\w)|(?<=\w)(?=\W)))", L"1851 1999 1950 1905 2003 ", { L"99", L"50",L"05" });
-		ExpectionAllTrue(LR"((?<=19)\d{2}\b)", L"1851 1999 1950 1905 2003 ", { L"99", L"50",L"05" });
-		ExpectionAllTrue(LR"((?<!19)\d{2} )", L"1851 1999 ", { L"51 ",});
+		ExpectionAllTrue(LR"((?<=19)\d{2}\b)", L"1851 1999 1950 1905 2003", { L"99", L"50", L"05" });
+		auto temp = LR"((?<!19)\d{2}\b)";
+		ExpectionAllTrue(temp, L"1851 1999 1950 1905 2003", { L"51", L"03" });
+		ExpectionAllTrue(LR"((?<=un)\w+\b)", L"unsure sure unity used ", { L"sure", L"ity" });
+
 	}
 	void TestAllComponent()
 	{
 		//TestLexer();
 		//TestParserUnCrash();
 		//TestParserTree();
-		//TestRegexMatchOneDFA();
-		//TestRegexMatchOneNFA();
+		TestRegexMatchOneDFA();
+		TestRegexMatchOneNFA();
 		TestLookAround();
-		
 	}
 }

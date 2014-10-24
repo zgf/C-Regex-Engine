@@ -51,7 +51,7 @@ namespace ztl
 		int		         edge_index;
 		int	             input_index;
 		//当前状态通过当前边消耗的字符长度
-		int	             length;
+		int	             length=0;
 		//	bool             meet_final;
 		SaveState() = default;
 		SaveState(State* _state, int edge, int input) :states(_state), edge_index(edge), input_index(input)
