@@ -31,7 +31,7 @@ namespace ztl
 		{
 			for(auto catch_length = 4; catch_length >= 1; catch_length--)
 			{
-				auto&& key = pattern.substr(index, catch_length);
+				auto key = pattern.substr(index, catch_length);
 				if(RegexLex::action_map.find(key) != RegexLex::action_map.end())
 				{
 					//RegexLex::action_map执行完后,index指向正确的位置了.也就不用++了.

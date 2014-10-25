@@ -604,85 +604,18 @@ namespace ztl
 		return match_result;
 	}
 
-	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, wstring::const_iterator input_index, wstring::const_iterator start, wstring::const_iterator end)
-	{
-		RegexMatchResult result;
-		auto current_input_index = input_index;
-		if(machine->dfa_expression != nullptr)
-		{
-			while(current_input_index < end)
-			{
-				SaveState save;
-				if(DFAMatch(*machine->dfa_expression, save, input, current_input_index,start, end))
-				{
-					//成功匹配
-					result.success = true;
-					result.start = save.input_index;
-					result.length = save.length;
-					result.matched = input.substr(save.input_index, save.length);
-					return result;
-				}
-				else
-				{
-					current_input_index++;
-				}
-			}
-		}
-		else
-		{
-			while(current_input_index < end)
-			{
-				result = NFAMatch(*machine->nfa_expression, input, current_input_index, start, end);
-				if(result.success == true)
-				{
-					return result;
-				}
-				current_input_index++;
-			}
-		}
-		return result;
-	}
-	//在start到end范围内寻找正则的全部匹配
-	vector<RegexMatchResult> RegexInterpretor::RegexMatchAll(const wstring& input, wstring::const_iterator start, wstring::const_iterator end)
-	{
-		vector<RegexMatchResult> result;
-		auto next_start_index = start;
-		while(next_start_index < end)
-		{
-			auto match_result = RegexMatchOne(input, next_start_index,start, end);
-			if(match_result.success == true)
-			{
-				result.emplace_back(move(match_result));
-				next_start_index = start + match_result.start + match_result.length;
-			}
-			else
-			{
-				next_start_index += 1;
-			}
-		}
-		return result;
-	}
+	
 
 	RegexMatchResult RegexInterpretor::Match(const wstring& input, const int start)
 	{
-		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
-		{
-			wstring reverse_input;
-			std::reverse_copy(input.begin(), input.end(), inserter(reverse_input, reverse_input.begin()));
-			return RegexMatchOne(reverse_input, reverse_input.begin() + start, reverse_input.begin(), reverse_input.end());
-		}
-		else
-		{
-			return RegexMatchOne(input, input.begin() + start,input.begin(), input.end());
-		}
+		return Match(input, input.begin() + start);
 	}
 	RegexMatchResult 	RegexInterpretor::Match(const wstring& input, wstring::const_iterator start)
 	{
 		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
-			wstring reverse_input;
-			std::reverse_copy(input.begin(), input.end(), inserter(reverse_input, reverse_input.begin()));
-			return RegexMatchOne(reverse_input, reverse_input.begin() + (start - input.begin()), reverse_input.begin(),reverse_input.end() );
+		
+			return RegexMatchOne(input, wstring::const_reverse_iterator(input.end()), wstring::const_reverse_iterator(input.end()), wstring::const_reverse_iterator(start));
 		}
 		else
 		{
@@ -698,9 +631,7 @@ namespace ztl
 	{
 		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
-			wstring reverse_input;
-			std::reverse_copy(input.begin(), input.end(), inserter(reverse_input, reverse_input.begin()));
-			return RegexMatchOne(reverse_input, reverse_input.begin() + (start - input.begin()), reverse_input.begin(), reverse_input.end()).success;
+			return RegexMatchOne(input, wstring::const_reverse_iterator(input.end()), wstring::const_reverse_iterator(input.end()), wstring::const_reverse_iterator(start)).success;
 		}
 		else
 		{
@@ -716,9 +647,7 @@ namespace ztl
 	{
 		if(find(optional->begin(), optional->end(), RegexControl::RightToLeft) != optional->end())
 		{
-			wstring reverse_input;
-			std::reverse_copy(input.begin(), input.end(), inserter(reverse_input, reverse_input.begin()));
-			return RegexMatchAll(reverse_input, start, reverse_input.end());
+			return RegexMatchAll(input, wstring::const_reverse_iterator(input.end()), wstring::const_reverse_iterator(start));
 		}
 		else
 		{
