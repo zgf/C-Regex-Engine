@@ -225,12 +225,6 @@ namespace ztl
 	AutoMachine::StatesType AutoMachine::NewLookAroundStates(StatesType& substates, const Edge::EdgeType& type)
 	{
 		auto&& result = NewStates();
-		/*if(type == Edge::EdgeType::NegativeLookbehind || type == Edge::EdgeType::PositiveLookbehind)
-		{
-			unordered_set<State*> sign;
-			substates.first = NewReverseGraph(substates.first, sign);
-			swap(substates.first, substates.second);
-		}*/
 		auto&& index = GetSubexpressionIndex(substates);
 		ConnetWith(result, type, index);
 		return move(result);
@@ -244,7 +238,7 @@ namespace ztl
 		//阻止DFA优化
 		if(greedy == false)
 		{
-			non_dfa.emplace_back(end_state);
+			none_dfa.emplace_back(end_state);
 			//需要在ENFA-NFA转换时调整保存的节点
 		}
 		auto number = -1;
@@ -327,8 +321,6 @@ namespace ztl
 		ConnetWith(target.second, end, Edge::EdgeType::Final);
 		return { target.first, end };
 	}
-
-
 }
 namespace ztl
 {
@@ -398,30 +390,27 @@ namespace ztl
 	}
 	void AutoMachine::ChangeLookAroundDirect(Edge* target)
 	{
-		if (target->type == Edge::EdgeType::PositiveLookbehind)
+		if(target->type == Edge::EdgeType::PositiveLookbehind)
 		{
 			target->type = Edge::EdgeType::PositivetiveLookahead;
 		}
-		else if (target->type == Edge::EdgeType::PositivetiveLookahead)
+		else if(target->type == Edge::EdgeType::PositivetiveLookahead)
 		{
 			target->type = Edge::EdgeType::PositiveLookbehind;
-
 		}
-		else if(target->type== Edge::EdgeType::NegativeLookbehind)
-		{ 
+		else if(target->type == Edge::EdgeType::NegativeLookbehind)
+		{
 			target->type = Edge::EdgeType::NegativeLookahead;
-
 		}
 		else if(target->type == Edge::EdgeType::NegativeLookahead)
 		{
 			target->type = Edge::EdgeType::NegativeLookbehind;
 		}
 	}
-	
+
 	//将target指向的图反转
 	State* AutoMachine::NewReverseGraph(State* target)
 	{
-
 		deque<pair<State*, int>>queue;
 		unordered_set<State*> sign;
 		queue.push_back({ target, target->output.size() });
@@ -519,40 +508,41 @@ namespace ztl
 			queue.pop_front();
 		}
 	}
-	bool AutoMachine::CheckPure(const AutoMachine::StatesType& expression)
+	bool AutoMachine::CheckPure(const AutoMachine::StatesType& target)
 	{
-		unordered_set<State*> marks;
-		function<void(State* element)> functor;
-		bool result = true;
-		functor = [this, &result, &functor, &marks](State* element)
+		deque<State*> queue;
+		//待处理边表
+
+		unordered_set<State*> sign;
+		queue.push_back(target.first);
+		sign.insert(target.first);
+		while(!queue.empty()&& target.first!=target.second)
 		{
-			if(find(non_dfa.begin(), non_dfa.end(), element) != non_dfa.end())
+			auto& front = queue.front();
+			if (find(none_dfa.begin(),none_dfa.end(),front)!=none_dfa.end())
 			{
-				result = false;
-				return;
+				return false;
 			}
-			if(marks.find(element) == marks.end())
+			////处理nfa的每一条边
+			for(auto&& edge : front->output)
 			{
-				marks.insert(element);
-				for(auto&& iter : element->output)
+				//在之前对NFARoot调用了ENFA2NFA
+				assert(edge->type != Edge::EdgeType::Epsilon);
+				if(edge->type != Edge::EdgeType::Char &&edge->type != Edge::EdgeType::Final)
 				{
-					assert(iter->type != Edge::EdgeType::Epsilon);
-					if(iter->type != Edge::EdgeType::Char &&iter->type != Edge::EdgeType::Final)
-					{
-						result = false;
-						return;
-					}
-					functor(iter->target);
-					if(result == false)
-					{
-						return;
-					}
+					return false;
+				}
+
+				if(sign.find(edge->target) == sign.end())
+				{
+					//新的未处理过的节点
+					queue.push_back(edge->target);
+					sign.insert(edge->target);
 				}
 			}
-		};
-		functor(expression.first);
-
-		return move(result);
+			queue.pop_front();
+		}
+		return true;
 	}
 	//现存的边
 	//Char 消耗字符
@@ -595,7 +585,7 @@ namespace ztl
 	{
 		for(auto& element : need_clear)
 		{
-			swap(edge_nfa_map[element],unordered_set<State*>());
+			edge_nfa_map[element].clear();
 		}
 		need_clear.clear();
 	}
@@ -620,7 +610,6 @@ namespace ztl
 		//这里可以改vector
 		vector<unordered_set<State*>> edge_nfa_map(edge_sum);
 		dfa_table.emplace_back(vector<int>(edge_sum, -1));
-		
 
 		dfa_nfa_map.emplace_back(unordered_set<State*>({ expression.first })/*EpsilonNFASet(*/)/*)*/;
 		nfa_dfa_map.insert({ dfa_nfa_map.back(), dfa_nfa_map.size() - 1 });
@@ -676,13 +665,12 @@ namespace ztl
 		result.finalset = final_dfa;
 		return move(result);
 	}
-	void	AutoMachine::AllNFAAddTheFinal()
+	/*void	AutoMachine::AllNFAAddTheFinal()
 	{
 		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
 		{
 			auto& subexpress = iter->second;
 			subexpress = NewFinalStates(subexpress);
-
 		}
 		for(size_t i = 0; i < subexpression.size(); ++i)
 		{
@@ -739,7 +727,7 @@ namespace ztl
 				dfa_anonymity_captures.insert({ i, NfaToDfa(subexpress) });
 			}
 		}
-	}
+	}*/
 	void  AutoMachine::OptimizeSubexpress()
 	{
 		for(auto&& iter = captures.begin(); iter != captures.end(); ++iter)
@@ -779,7 +767,7 @@ namespace ztl
 		return 	target->type == Edge::EdgeType::PositiveLookbehind ||
 			target->type == Edge::EdgeType::NegativeLookbehind;
 	}
-	//按顺序获取从target节点可达的所有非空边,零宽断言边也当空边处理.来压缩节点,
+	//按顺序获取从target节点可达的所有非空边
 	vector<Edge*> AutoMachine::GetSortedReachNoneEpsilonEdge(State* target, unordered_map<State*, State*>& state_map, State* front, unordered_set<State*>& sign)
 	{
 		state_map.insert({ target, front });
@@ -873,7 +861,7 @@ namespace ztl
 		}
 
 		//处理一下non_dfa
-		for(auto& element : non_dfa)
+		for(auto& element : none_dfa)
 		{
 			element = state_map[element];
 		}

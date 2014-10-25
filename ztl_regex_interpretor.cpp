@@ -25,14 +25,13 @@ namespace ztl
 		machine->BuildOptimizeNFA();
 	}
 
-	template<typename iterator_type>
-	bool Final(const wstring& input, iterator_type begin, iterator_type end, iterator_type& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
+	bool Final( vector<SaveState>& save_stack)
 	{
 		save_stack.back().length = 0;
 		return true;
 	}
 	template<typename iterator_type>
-	bool Head(const wstring& input, iterator_type begin, iterator_type end, iterator_type& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
+	bool Head(iterator_type begin,  iterator_type& input_index, vector<SaveState>& save_stack)
 	{
 		if(input_index == begin)
 		{
@@ -45,7 +44,7 @@ namespace ztl
 		}
 	}
 	template<typename iterator_type>
-	bool Tail(const wstring& input, iterator_type begin, iterator_type end, iterator_type& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
+	bool Tail(iterator_type end, iterator_type& input_index,vector<SaveState>& save_stack)
 	{
 		if(input_index == end)
 		{
@@ -59,14 +58,14 @@ namespace ztl
 	}
 	template<typename iterator_type>
 
-	bool Char(const wstring& input, iterator_type begin, iterator_type end, iterator_type& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack, RegexMatchResult& result)
+	bool Char(iterator_type end, iterator_type& input_index, RegexInterpretor& interpretor, vector<SaveState>& save_stack)
 	{
 		if(input_index == end)
 		{
 			return false;
 		}
 		auto expect_index = any_cast<int>(save_stack.back().states->output[save_stack.back().edge_index]->userdata);
-		auto char_index = (*interpretor.machine->table->char_table)[*input_index];
+		auto char_index = interpretor.GetWCharIndex(*input_index);
 		if(expect_index == char_index)
 		{
 			save_stack.back().length = 1;
@@ -519,8 +518,91 @@ namespace ztl
 			save.length = -1;
 		}
 	}
+	template<typename iterator_type>
+	RegexMatchResult& IsSucceedMatch(const int sumlength, const wstring& input, iterator_type input_index, iterator_type start, iterator_type end, vector<SaveState>& state_stack, RegexMatchResult& result)
+	{
+		if(sumlength != 0)
+		{
+			//从第一个捕获>0开始
+			result.length = sumlength;
+			result.start = (*find_if(state_stack.begin(), state_stack.end(), [](const SaveState& save)
+			{
+				return save.length > 0;
+			})).input_index;
+			result.matched = input.substr(result.start, result.length);
+			result.success = true;
+			return result;
+		}
+		else if(input_index == end)
+		{
+			result.length = 0;
+			result.start = input_index - start;
+			result.success = true;
+			return result;
+		}
+		else
+		{
+			return result;
+		}
+	}
+	template<typename iterator_type>
+	bool StateGoto(Edge::EdgeType edge_type, RegexInterpretor& itereptor, const wstring& input, iterator_type start, iterator_type end, iterator_type& current_input_index, vector<SaveState>& state_stack, RegexMatchResult& result)
+	{
+		bool match_result = false;
+		switch(edge_type)
+		{
+			case Edge::EdgeType::Final:
+				match_result = Final( state_stack);
+				break;
+			case Edge::EdgeType::Head:
+				match_result = Head( start,  current_input_index, state_stack);
 
-	
+				break;
+			case Edge::EdgeType::Tail:
+				match_result = Tail( end, current_input_index,state_stack);
+
+				break;
+			case Edge::EdgeType::Char:
+				match_result = Char(end, current_input_index, itereptor, state_stack);
+
+				break;
+			case Edge::EdgeType::Capture:
+				match_result = Capture(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::AnonymityCapture:
+				match_result = AnonymityCapture(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::BackReference:
+				match_result = BackReference(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::AnonymityBackReference:
+				match_result = AnonymityBackReference(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::PositiveLookbehind:
+				match_result = PositiveLookbehind(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::PositivetiveLookahead:
+				match_result = PositivetiveLookahead(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::NegativeLookbehind:
+				match_result = NegativeLookbehind(input, start, end, current_input_index, itereptor, state_stack, result);
+
+				break;
+			case Edge::EdgeType::NegativeLookahead:
+				match_result = NegativeLookahead(input, start, end, current_input_index, itereptor, state_stack, result);
+				break;
+			default:
+				assert(false);
+				break;
+		}
+		return match_result;
+	}
 
 	RegexMatchResult RegexInterpretor::RegexMatchOne(const wstring& input, wstring::const_iterator input_index, wstring::const_iterator start, wstring::const_iterator end)
 	{

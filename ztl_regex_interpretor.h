@@ -92,8 +92,9 @@ namespace ztl
 		//结果保存在save_stack.back()内
 		RegexMatchResult MatchSucced(const wstring& input, vector<SaveState>& save_stack, RegexMatchResult& result);
 		RegexMatchResult MatchFailed();
-		int GetWCharIndex(const wchar_t character)const;
+		
 	public:
+		int GetWCharIndex(const wchar_t character)const;
 		template<typename iterator_type>
 		bool DFAMatch(const DFA& dfa, SaveState& save_state, const wstring& input, iterator_type input_index, iterator_type start, iterator_type end)
 		{
@@ -141,6 +142,7 @@ namespace ztl
 			
 			return save_state.length != 0;
 		}
+		
 		//NFA 匹配,从start开始,不移动start,看能否到达终结状态
 		//边都排序一次,final放最后,不移动start,只匹配一次.
 		template<typename iterator_type>
@@ -167,24 +169,11 @@ namespace ztl
 						assert(save.length != -1);
 						return left + save.length;
 					});
-					if(sumlength != 0)
+
+					auto& match_result = IsSucceedMatch(sumlength, input, input_index, start, end, state_stack, result);
+					if(match_result.success == true)
 					{
-						//从第一个捕获>0开始
-						result.length = sumlength;
-						result.start = (*find_if(state_stack.begin(), state_stack.end(), [](const SaveState& save)
-						{
-							return save.length > 0;
-						})).input_index;
-						result.matched = input.substr(result.start, result.length);
-						result.success = true;
-						return result;
-					}
-					else if(input_index == end)
-					{
-						result.length = 0;
-						result.start = input_index - start;
-						result.success = true;
-						return result;
+						return match_result;
 					}
 					else if(!state_stack.empty())
 					{
@@ -198,71 +187,13 @@ namespace ztl
 				auto& save = state_stack.back();
 				//设置save和各个变量状态
 				SetState(is_new_state, save, current_edge_index, start,current_input_index, current_state);
-
 				for(; current_edge_index < current_state->output.size(); current_edge_index++)
 				{
 					save.edge_index = current_edge_index;
-					bool match_result = true;
-					//auto&& match_result = actions[current_state->output[current_edge_index]->type](input, start, end, current_input_index, *this, state_stack, result);
-					switch(current_state->output[current_edge_index]->type)
-					{
-						case Edge::EdgeType::Final:
-							match_result = Final(input, start, end, current_input_index, *this, state_stack, result);
-							break;
-						case Edge::EdgeType::Head:
-							match_result = Head(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::Tail:
-							match_result = Tail(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::Char:
-							match_result = Char(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::Capture:
-							match_result = Capture(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::AnonymityCapture:
-							match_result = AnonymityCapture(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::BackReference:
-							match_result = BackReference(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::AnonymityBackReference:
-							match_result = AnonymityBackReference(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::PositiveLookbehind:
-							match_result = PositiveLookbehind(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::PositivetiveLookahead:
-							match_result = PositivetiveLookahead(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::NegativeLookbehind:
-							match_result = NegativeLookbehind(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						case Edge::EdgeType::NegativeLookahead:
-							match_result = NegativeLookahead(input, start, end, current_input_index, *this, state_stack, result);
-
-							break;
-						default:
-							assert(false);
-							break;
-					}
-
-
+					bool match_result = StateGoto(current_state->output[current_edge_index]->type,*this,input,start,end,current_input_index,state_stack,result);
 					if(match_result == true)
 					{
 						current_state = current_state->output[current_edge_index]->target;
-						//	state_stack.push_back(save);
 						state_stack.emplace_back(SaveState());
 						is_new_state = true;
 						goto LoopEnd;

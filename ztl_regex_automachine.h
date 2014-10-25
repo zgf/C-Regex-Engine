@@ -30,7 +30,7 @@ namespace ztl
 		unordered_map<int, DFA>							dfa_subexpression;
 		Ptr<DFA>										dfa_expression;
 		//包含该状态的子表达式不进行DFA优化
-		vector<State*>									non_dfa;
+		vector<State*>									none_dfa;
 	public:
 		AutoMachine() = delete;
 		AutoMachine(RegexParser& parser);
@@ -82,7 +82,7 @@ namespace ztl
 		void							GetRangeTableIndex(const CharRange& target, vector<int>& range_table)const;
 		
 		//检查当前子图是不是pure正则的 也就是只有 char e,
-		bool							CheckPure(const AutoMachine::StatesType& expression);
+		bool							CheckPure(const AutoMachine::StatesType& target);
 		void							ClearEdgeNfaMap(vector<int>& need_clear, vector<unordered_set<State*>>& edge_nfa_map);
 		//NFA to DFA
 		DFA								NfaToDfa(AutoMachine::StatesType& expression);
