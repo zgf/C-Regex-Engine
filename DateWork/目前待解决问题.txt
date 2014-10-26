@@ -1,0 +1,148 @@
+/*
+1. 几个新功能的optional的
+//新功能
+		RegexMacro,//(?#<name>expression)
+		MacroReference,//$<name> 
+		语法分析已完成
+
+
+		//匹配行开始
+		LineBegin,
+		//匹配行结束
+		LineEnd,
+		2个词法部分完成
+		2个语法分析部分完成
+		直接在语法分析时转换为零宽断言,该功能实现完成
+		//通配符,匹配非\n
+		GeneralMatch,
+		//匹配所有字符
+		MatchAllSymbol,
+		直接在语法分析时实现为不同的normalchar,该功能实现完成
+		2个语法分析完成
+2. optional的实现
+
+ExplicitCapture,//不匿名捕获 词法分析时 "("分情况讨论
+IgnoreCase,//大小写不敏感的匹配 修改字母表的部分,最后在匹配时做判断
+Multiline,// $^ 匹配行结尾和开头 修改成零宽断言搞定
+RightToLeft,// 匹配时处理
+Singleline,//.匹配所有字符 修改为不同的charset搞定
+OnlyDFA,//所有匿名捕获变非捕获,不使用命名捕获,不使用高级功能
+
+3.修改Loop * + ? 
+4. 修改DFA生成算法直接生成表 并且考虑E匹配
+5.automachine 修改支持宏功能, expression修改支持宏功能
+宏不影响automachine以后的内容,在aumachine构造NFA中,宏引用全部被替换掉
+宏本身被替换为空串
+
+*/
+/*
+目前问题:
+1.对于IgnoreCase 需要在interpretor运行时处理. 这块还未完成
+2.对于ExplicitCapture, 单元测试还未写
+3.Multiline 单元测试未写
+4.Singleline 单元测试未写
+5.RegexMacro和refer还没写automachine的NFA构造时的处理 已完成
+6.DFA生成算法还未修改 修改完成
+7.Loop的*+?还未修改 已修改
+8.状态机代码太乱,待修改
+9.在automachine添加对匿名捕获组的处理 已添加,
+10.添加对匿名后向引用和命名后向引用的处理 匿名后向引用已添加
+*/
+
+/*
+1.EpsilonNFAtoNFA 完成
+2.去掉Edge的source成员 完成
+3.去掉State的input成员 完成
+4.优化alert的节点构造,因为没有input而造成的节点增多应该被解决 解决
+5.被DFA匹配的subexpression不用转ENFA 已解决
+6.AutoMachine函数太乱,需要重新组织一下 
+7.FindReachTargetStateSet待完成 已完成
+8.所有的dfa添加final节点,这样dfa不需要vector的finalset了 已修改
+9.更好的错误提示
+10.RI需要修改权限
+11.打印DFA辅助调试
+12.?选择Loop的DFA化问题 已解决 外面套一层节点再连接E就OK了
+13.parser 括号的嵌套bug ((3)-(3)) 已解决
+14. ENFAtoNFA EpsilonNFASet 的性能极低- -待改进 ENFAtoNFA已解决
+15.对于循环 {3} {5}这种,用DFA方式 完成
+16.添加大量DFA的测试 完成
+*/
+/*
+修改NfaToDfa 多使用vector 解决 NFAToDfa性能开销大 搞定,
+		Capture, 完成
+		BackReference,	完成
+	OK	Jump,//无条件转移边和final差不多,只是不会匹配时被放到最后
+	OK	JumpByTime,//通过测试Time次 any pair<int,int> index,number
+	OK	JumpByTest,//通过测试  any int index	
+		Char, 完成
+		Head,完成
+		Tail,完成
+		PositivetiveLookahead, 完成
+		NegativeLookahead, 完成
+		PositiveLookbehind,完成
+		NegativeLookbehind,完成
+		Final, //边后面是终结状态 完成
+		AnonymityCapture, 完成
+		AnonymityBackReference, 完成
+		这些action完成
+*/
+/*
+NFA匹配Code大体完成 待测试
+MatchSucced TODO
+Loop DFA部分已经注释
+
+重写Loop部分 完成
+砍掉 RI的value部分,这些应该直接放入匹配结果里面去 完成
+NFA 捕获组顺序问题未解决 已解决 
+添加了丑陋的need sort成员 应该有更好的解决办法
+重构 automachine的 匿名捕获组成员,包括index进去 已解决
+组织好RA 和RI的成员函数的权限,位置,
+考虑信息隐藏和函数重命名,分离公共模块,减少冗余
+思考各函数的依赖关系,增加断言,减少耦合
+
+Lazy匹配需要拒绝DFA优化,non_dfa耦合的函数跨度较大 - -从Loop在automachine的构造到checkpure的检测
+
+Final不在和优先级相关,仅无条件转移边以及保证终结节点只有一个 已解决
+优先级由NFA的顺序控制	已解决
+Loop lazy匹配解决
+捕获的子表达式有问题 已测试,无问题
+后向引用 正则宏 零宽断言 还未测试
+命名捕获已测试
+后向引用已测试
+零宽断言测试完成
+宏测试完成
+*/
+/*
+C++ 缺少有序列表
+vector和map的find方法不统一
+vector没有后端插入区间的方法
+
+
+*/
+/*
+终于都算完工了- -
+晚上重构下代码,差不多了
+
+*/
+/*
+字符串终结符号不应该能够被匹配 已解决
+逆向环视匹配用的有向图应该是原图的逆图 已解决
+环视测试	通过
+*/
+/*
+环视内如果嵌套NFA,需要连同子表达式一起逆图 待修改 环视内不准使用后向引用- -搞定
+从右向左匹配 int改迭代器 ...看看再决定做不做
++号等特殊符号在不消耗字符的那里不需要转义 待修改 已解决
+-前后是[]变普通字符 待修改 已解决
+获得可达非空边重新处理一下,可以把0消耗字符的边拿过来.除了final 这个不需要修改,目前的output模型不适合用这样的做法. 解决
+\b应该能正确处理字符串开头和结尾 已解决
+Mutiline模式应该正确匹配串的开始和结尾  已解决
+零宽断言应该内部可以使用捕获组 已解决
+*/
+/*
+\b有问题 已解决
+各种对指针的引用 对容器的引用导致的错误 已fix找到的问题 - -....指针慎重引用
+没事不要写太复杂的递归,一个递归应该只干一个事情- -避免副作用
+正则替换没测试 测试通过
+多模式正则匹配没写 待添加,为下一步 通用可配置语法分析器做准备
+*/

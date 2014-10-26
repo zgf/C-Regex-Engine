@@ -1,21 +1,278 @@
-﻿生成启动时间为 2014/10/7 12:19:55。
-     1>项目“C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”在节点 2 上(Build 个目标)。
+﻿生成启动时间为 10/25/2014 12:55:02 AM。
+     1>项目“C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”在节点 2 上(Build 个目标)。
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt main.cpp
+         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _LIB /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt forward.cpp main.cpp ztl_regex_automachine.cpp ztl_regex_expression.cpp ztl_regex_interpretor.cpp ztl_regex_lex.cpp ztl_regex_parser.cpp ztl_regex_unittest.cpp
+         forward.cpp
          main.cpp
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(23): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(125): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(129): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(163): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_lex.h(177): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c++ regex engine\ztl_regex_parser.h(58): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+         ztl_regex_automachine.cpp
+     1>ztl_regex_automachine.cpp(322): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_automachine.cpp(608): warning C4267: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_automachine.cpp(659): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+     1>C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\include\utility(146): warning C4267: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
+                 ztl_regex_automachine.cpp(427) : see reference to function template instantiation 'std::pair<ztl::State *,int>::pair<ztl::State*&,unsigned __int64,void>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Other1=ztl::State *&
+         ,            _Other2=unsigned __int64
+                 ]
+                 ztl_regex_automachine.cpp(427) : see reference to function template instantiation 'std::pair<ztl::State *,int>::pair<ztl::State*&,unsigned __int64,void>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Other1=ztl::State *&
+         ,            _Other2=unsigned __int64
+                 ]
+     1>C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\include\utility(146): warning C4267: 'initializing' : conversion from 'size_t' to 'const int', possible loss of data
+                 ztl_regex_automachine.cpp(731) : see reference to function template instantiation 'std::pair<const _Kty,_Ty>::pair<size_t&,ztl::DFA,void>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Kty=int
+         ,            _Ty=ztl::DFA
+         ,            _Other1=size_t &
+         ,            _Other2=ztl::DFA
+                 ]
+                 ztl_regex_automachine.cpp(731) : see reference to function template instantiation 'std::pair<const _Kty,_Ty>::pair<size_t&,ztl::DFA,void>(_Other1,_Other2 &&)' being compiled
+                 with
+                 [
+                     _Kty=int
+         ,            _Ty=ztl::DFA
+         ,            _Other1=size_t &
+         ,            _Other2=ztl::DFA
+                 ]
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(20): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(31) : see reference to function template instantiation '_Ty std::_Accumulate<unsigned __int64*,_Ty,_Fn2>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Fn2=std::plus<void>
+         ,            _InIt=unsigned __int64 *
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(39) : see reference to function template instantiation '_Ty std::accumulate<_InIt,_Ty,std::plus<void>>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+         ,            _Fn2=std::plus<void>
+                 ]
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_automachine.h(122) : see reference to function template instantiation '_Ty std::accumulate<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>,int>(_InIt,_InIt,_Ty)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+                 ]
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xmemory0(600): warning C4267: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xmemory0(723) : see reference to function template instantiation 'void std::allocator<_Ty>::construct<_Objty,unsigned __int64&>(_Objty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Objty=int
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xmemory0(723) : see reference to function template instantiation 'void std::allocator<_Ty>::construct<_Objty,unsigned __int64&>(_Objty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Objty=int
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xmemory0(872) : see reference to function template instantiation 'void std::allocator_traits<_Alloc>::construct<_Ty,unsigned __int64&>(std::allocator<_Ty> &,_Objty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Alloc=std::allocator<int>
+         ,            _Ty=int
+         ,            _Objty=int
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xmemory0(872) : see reference to function template instantiation 'void std::allocator_traits<_Alloc>::construct<_Ty,unsigned __int64&>(std::allocator<_Ty> &,_Objty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Alloc=std::allocator<int>
+         ,            _Ty=int
+         ,            _Objty=int
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\deque(1161) : see reference to function template instantiation 'void std::_Wrap_alloc<std::allocator<_Ty>>::construct<_Ty,unsigned __int64&>(_Ty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\deque(1161) : see reference to function template instantiation 'void std::_Wrap_alloc<std::allocator<_Ty>>::construct<_Ty,unsigned __int64&>(_Ty *,unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+                 ]
+                 ztl_regex_automachine.cpp(660) : see reference to function template instantiation 'void std::deque<int,std::allocator<_Ty>>::emplace_back<unsigned __int64&>(unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+                 ]
+                 ztl_regex_automachine.cpp(660) : see reference to function template instantiation 'void std::deque<int,std::allocator<_Ty>>::emplace_back<unsigned __int64&>(unsigned __int64 &)' being compiled
+                 with
+                 [
+                     _Ty=int
+                 ]
+         ztl_regex_expression.cpp
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(20): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(31) : see reference to function template instantiation '_Ty std::_Accumulate<unsigned __int64*,_Ty,_Fn2>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Fn2=std::plus<void>
+         ,            _InIt=unsigned __int64 *
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(39) : see reference to function template instantiation '_Ty std::accumulate<_InIt,_Ty,std::plus<void>>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+         ,            _Fn2=std::plus<void>
+                 ]
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_automachine.h(122) : see reference to function template instantiation '_Ty std::accumulate<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>,int>(_InIt,_InIt,_Ty)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+                 ]
+         ztl_regex_interpretor.cpp
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_interpretor.h(107): warning C4244: '=' : conversion from '__int64' to 'int', possible loss of data
+                 ztl_regex_interpretor.cpp(279) : see reference to function template instantiation 'bool ztl::RegexInterpretor::DFAMatch<std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>>(const ztl::DFA &,ztl::SaveState &,const std::wstring &,iterator_type,iterator_type,iterator_type)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+                 ]
+     1>c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_interpretor.h(185): warning C4244: '=' : conversion from '__int64' to 'int', possible loss of data
+                 ztl_regex_interpretor.cpp(294) : see reference to function template instantiation 'ztl::RegexMatchResult ztl::RegexInterpretor::NFAMatch<std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>>(const ztl::AutoMachine::StatesType &,const std::wstring &,iterator_type,iterator_type,iterator_type)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+                 ]
+     1>ztl_regex_interpretor.cpp(508): warning C4244: '=' : conversion from '__int64' to 'int', possible loss of data
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_interpretor.h(200) : see reference to function template instantiation 'void ztl::SetState<iterator_type>(bool,ztl::SaveState &,int &,iterator_type,iterator_type &,ztl::State *&)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+                 ]
+                 ztl_regex_interpretor.cpp(294) : see reference to function template instantiation 'ztl::RegexMatchResult ztl::RegexInterpretor::NFAMatch<std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>>(const ztl::AutoMachine::StatesType &,const std::wstring &,iterator_type,iterator_type,iterator_type)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+                 ]
+     1>ztl_regex_interpretor.cpp(93): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_interpretor.h(233) : see reference to function template instantiation 'bool ztl::BackReference<iterator_type>(const std::wstring &,iterator_type,iterator_type,iterator_type &,ztl::RegexInterpretor &,std::vector<ztl::SaveState,std::allocator<_Ty>> &,ztl::RegexMatchResult &)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+         ,            _Ty=ztl::SaveState
+                 ]
+     1>ztl_regex_interpretor.cpp(115): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_interpretor.h(237) : see reference to function template instantiation 'bool ztl::AnonymityBackReference<iterator_type>(const std::wstring &,iterator_type,iterator_type,iterator_type &,ztl::RegexInterpretor &,std::vector<ztl::SaveState,std::allocator<_Ty>> &,ztl::RegexMatchResult &)' being compiled
+                 with
+                 [
+                     iterator_type=std::reverse_iterator<std::_String_const_iterator<std::_String_val<std::_Simple_types<wchar_t>>>>
+         ,            _Ty=ztl::SaveState
+                 ]
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(20): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(31) : see reference to function template instantiation '_Ty std::_Accumulate<unsigned __int64*,_Ty,_Fn2>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Fn2=std::plus<void>
+         ,            _InIt=unsigned __int64 *
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(39) : see reference to function template instantiation '_Ty std::accumulate<_InIt,_Ty,std::plus<void>>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+         ,            _Fn2=std::plus<void>
+                 ]
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_automachine.h(122) : see reference to function template instantiation '_Ty std::accumulate<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>,int>(_InIt,_InIt,_Ty)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+                 ]
+         ztl_regex_lex.cpp
+     1>ztl_regex_lex.cpp(17): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_lex.cpp(440): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_lex.cpp(444): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_lex.cpp(479): warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
+     1>ztl_regex_lex.cpp(493): warning C4267: 'return' : conversion from 'size_t' to 'int', possible loss of data
+         ztl_regex_parser.cpp
+     1>ztl_regex_parser.cpp(87): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xutility(2633): warning C4267: '=' : conversion from 'size_t' to 'unsigned short', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\xutility(2663) : see reference to function template instantiation '_OutIt std::_Fill_n<unsigned short*,_Diff,_Ty>(_OutIt,_Diff,const _Ty &)' being compiled
+                 with
+                 [
+                     _OutIt=unsigned short *
+         ,            _Diff=int
+         ,            _Ty=size_t
+                 ]
+                 ztl_regex_parser.cpp(101) : see reference to function template instantiation '_OutIt std::fill_n<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned short>>>,int,size_t>(_OutIt,_Diff,const _Ty &)' being compiled
+                 with
+                 [
+                     _OutIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned short>>>
+         ,            _Diff=int
+         ,            _Ty=size_t
+                 ]
+         ztl_regex_unittest.cpp
+     1>ztl_regex_unittest.cpp(302): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(304): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(306): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(308): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(310): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(312): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(314): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(340): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(342): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(344): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(414): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(418): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(422): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(423): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(425): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(429): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(432): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(434): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(436): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(438): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(440): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(442): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(444): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(473): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(475): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(477): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>ztl_regex_unittest.cpp(481): warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+     1>C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(20): warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(31) : see reference to function template instantiation '_Ty std::_Accumulate<unsigned __int64*,_Ty,_Fn2>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _Fn2=std::plus<void>
+         ,            _InIt=unsigned __int64 *
+                 ]
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\numeric(39) : see reference to function template instantiation '_Ty std::accumulate<_InIt,_Ty,std::plus<void>>(_InIt,_InIt,_Ty,_Fn2)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+         ,            _Fn2=std::plus<void>
+                 ]
+                 c:\users\zgf\documents\visual studio 2013\projects\c++ regex engine\c---regex-engine\c++ regex engine\ztl_regex_automachine.h(122) : see reference to function template instantiation '_Ty std::accumulate<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>,int>(_InIt,_InIt,_Ty)' being compiled
+                 with
+                 [
+                     _Ty=int
+         ,            _InIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned __int64>>>
+                 ]
        Link:
-         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.lib" /MACHINE:X64 x64\Release\main.obj
+         C:\Program Files (x86)\Microsoft Visual C++ Compiler Nov 2013 CTP\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\x64\Release\C++ Regex Engine.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\x64\Release\C++ Regex Engine.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\x64\Release\C++ Regex Engine.lib" /MACHINE:X64 /PROFILE x64\Release\forward.obj
+         x64\Release\main.obj
+         x64\Release\ztl_regex_automachine.obj
+         x64\Release\ztl_regex_expression.obj
+         x64\Release\ztl_regex_interpretor.obj
+         x64\Release\ztl_regex_parser.obj
+         x64\Release\ztl_regex_unittest.obj
+         x64\Release\ztl_regex_lex.obj
          Generating code
          Finished generating code
-         C++ Regex Engine.vcxproj -> C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\x64\Release\C++ Regex Engine.exe
-     1>已完成生成项目“C:\Users\ZGF\documents\visual studio 2013\Projects\C++ Regex Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”(Build 个目标)的操作。
+         C++ Regex Engine.vcxproj -> C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\x64\Release\C++ Regex Engine.exe
+     1>已完成生成项目“C:\Users\ZGF\Documents\Visual Studio 2013\Projects\C++ Regex Engine\C---Regex-Engine\C++ Regex Engine\C++ Regex Engine.vcxproj”(Build 个目标)的操作。
 
 生成成功。
 
-已用时间 00:00:07.75
+已用时间 00:00:34.78
