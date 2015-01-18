@@ -1,4 +1,6 @@
 #include "forward.h"
+#include "ztl_regex_expression.h"
+#include "ztl_regex_parser.h"
 #include "ztl_regex_automachine.h"
 namespace ztl
 {

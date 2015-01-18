@@ -1,10 +1,37 @@
 #pragma once
 #include "../Source/forward.h"
+#include "../Source/ztl_regex_lex.h"
+#include "../Source/ztl_regex_interpretor.h"
 #include "../Source/ztl_regex_writer.h"
 #include "../Source/ztl_regex_automachine.h"
-#include "../Source/ztl_regex_interpretor.h"
+#include "../Source/ztl_regex_parser.h"
 namespace ztl
 {
+  extern RegexParseTreeWriter PositivetiveLookahead(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter PositiveLookbehind(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter NegativeLookbehind(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter NegativeLookahead(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter CharSetw();
+  extern RegexParseTreeWriter CharSetW();
+  extern RegexParseTreeWriter One(const wstring& character);
+  extern RegexParseTreeWriter One(const wchar_t& character);
+  extern RegexParseTreeWriter Capture(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter StringHead();
+  extern RegexParseTreeWriter StringTail();
+  extern RegexParseTreeWriter BackReference(const wstring name);
+  extern RegexParseTreeWriter AnonymityBackReference(const int index);
+  extern RegexParseTreeWriter Capture(const RegexParseTreeWriter& expression);
+  extern RegexParseTreeWriter operator|(const RegexParseTreeWriter& left, const RegexParseTreeWriter& right);
+
+  extern  RegexParseTreeWriter CharSetCreator(bool reverse, const vector<CharRange>&range);
+
+  extern  RegexParseTreeWriter operator+(const RegexParseTreeWriter& left, const RegexParseTreeWriter& right);
+  extern  RegexParseTreeWriter NamedCapture(const wstring name, const RegexParseTreeWriter& expression);
+  extern  RegexParseTreeWriter NoneCapture(const RegexParseTreeWriter& expression);
+}
+namespace ztl
+{
+
 	void TestLexer()
 	{
 		auto ExpectEq = [](const wstring input, const vector<TokenType>& expect)->bool
@@ -77,6 +104,8 @@ namespace ztl
 		//后向引用
 		assert(ExpectEq(L"(<one>ee)\\k<one>", { TokenType::CaptureBegin, TokenType::Named, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::BackReference, TokenType::Named }));
 		assert(ExpectEq(L"(ee)\\1", { TokenType::AnonymityCaptureBegin, TokenType::NormalChar, TokenType::NormalChar, TokenType::CaptureEnd, TokenType::AnonymityBackReference, TokenType::Number }));
+		assert(ExpectEq(L"(<one>O)|(<two>T)", { TokenType::CaptureBegin,TokenType::Named,TokenType::NormalChar,TokenType::CaptureEnd,TokenType::Alternation,TokenType::CaptureBegin,TokenType::Named,TokenType::NormalChar,TokenType::CaptureEnd }));
+
 	}
 	void TestParserUnCrash()
 	{
@@ -541,5 +570,6 @@ namespace ztl
 		TestRegexMatchOneNFA();
 		TestLookAround();
 		TestRepalce();
+		
 	}
 }

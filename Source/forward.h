@@ -15,6 +15,7 @@
 #include "boost/any.hpp"
 #include <locale>
 #include <deque>
+#include<iterator>
 namespace ztl
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -60,7 +61,3 @@ namespace ztl
 	using std::swap;
 	using std::make_pair;
 }
-#include "ztl_regex_data.h"
-#include "ztl_regex_expression.h"
-#include "ztl_regex_lex.h"
-#include "ztl_regex_parser.h"

@@ -1,5 +1,6 @@
 #include "forward.h"
 #include "ztl_regex_automachine.h"
+#include "ztl_regex_expression.h"
 namespace ztl
 {
 	class IRegexAlogrithm

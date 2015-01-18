@@ -72,6 +72,5 @@ int main()
 {
 	std::locale::global(std::locale(""));
 	ztl::TestAllComponent();
-	//TestRegexByShell();
 	return 0;
 }

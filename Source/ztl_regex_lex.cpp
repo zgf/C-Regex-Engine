@@ -482,11 +482,19 @@ namespace ztl
 		{
 			if(pattern[start_index] == matched_begin)
 			{
-				count++;
+				if(!(start_index != 0 && pattern[start_index - 1] == '\\'))
+				{
+					count++;
+				}
+			
 			}
 			else if(pattern[start_index] == matched_end)
 			{
-				count--;
+				if(!(start_index != 0 && pattern[start_index - 1] == '\\'))
+				{
+					count--;
+				}
+			
 			}
 			if(count == 0)
 			{

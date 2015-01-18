@@ -1,10 +1,10 @@
 #pragma once
-#include "forward.h"
 #include "ztl_regex_data.h"
-#include "ztl_regex_expression.h"
-
 namespace ztl
 {
+	class Expression;
+	class CharTable;
+	class RegexParser;
 	//自动机
 	//构造非空NFA.
 	class AutoMachine

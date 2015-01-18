@@ -1,6 +1,4 @@
 #pragma once
-#include "ztl_regex_lex.h"
-#include "ztl_regex_expression.h"
 /*
  ‰»Î: tokenlist
  ‰≥ˆ: expression tree
@@ -45,6 +43,13 @@ CaptureRight = "Named"  Alert "CaptureEnd" |Alert  "CaptureEnd"
 */
 namespace ztl
 {
+	class RegexLex;
+	class Expression;
+	enum class RegexControl:int;
+	class CharTable;
+	class RegexToken;
+	enum class TokenType:int;
+	class CharRange;
 	class RegexParser
 	{
 		using FirstMapType = unordered_map < TokenType, Ptr<unordered_set<TokenType>> > ;
